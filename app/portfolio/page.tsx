@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
+import PortfolioImage from '@/components/portfolio-image';
 import { getPortfolio } from '@/lib/firebaseService';
 import { Portfolio } from '@/lib/types';
 
@@ -96,15 +97,14 @@ export default function PortfolioPage() {
                   key={portfolio.id}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col"
                 >
-                  {portfolio.image && (
-                    <div className="h-40 sm:h-48 overflow-hidden">
-                      <img
-                        src={portfolio.image}
-                        alt={portfolio.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
+                {portfolio.image && (
+                  <PortfolioImage
+                    src={portfolio.image}
+                    alt={portfolio.title}
+                    containerClassName="h-40 sm:h-48 overflow-hidden"
+                    className="w-full h-full object-cover"
+                  />
+                )}
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{portfolio.title}</h3>
                     <p className="text-gray-600 text-sm mb-4">{portfolio.description}</p>

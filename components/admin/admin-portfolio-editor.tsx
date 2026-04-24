@@ -15,9 +15,10 @@ import {
   onPortfolioChange,
   uploadImage,
 } from '@/lib/firebaseService';
+import { uploadPortfolioImageToBlob } from '@/lib/blobService';
 import { Portfolio } from '@/lib/types';
 import { toast } from 'sonner';
-import { Trash2, Globe, Eye } from 'lucide-react';
+import { Trash2, Globe, Eye, Cloud } from 'lucide-react';
 
 const portfolioSchema = z.object({
   title: z.string().min(3, 'Title is required'),
@@ -35,8 +36,10 @@ export default function AdminPortfolioEditor() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [lastPublished, setLastPublished] = useState<Date | null>(null);
+  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob'>('blob');
   const {
     register,
     handleSubmit,
@@ -59,12 +62,28 @@ export default function AdminPortfolioEditor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploadingImage(true);
     try {
-      const url = await uploadImage(file, `portfolio/${Date.now()}`);
+      let url: string;
+      
+      if (uploadMethod === 'blob') {
+        // Upload to Vercel Blob
+        const blobResult = await uploadPortfolioImageToBlob(file);
+        url = blobResult.url;
+        console.log('[v0] Blob upload successful:', url);
+      } else {
+        // Upload to Firebase (legacy)
+        url = await uploadImage(file, `portfolio/${Date.now()}`);
+        console.log('[v0] Firebase upload successful:', url);
+      }
+      
       setSelectedImage(url);
-      toast.success('Image uploaded successfully');
-    } catch (error) {
-      toast.error('Failed to upload image');
+      toast.success(`Image uploaded to ${uploadMethod === 'blob' ? 'Vercel Blob' : 'Firebase'} successfully`);
+    } catch (error: any) {
+      console.error('[v0] Image upload error:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -147,9 +166,38 @@ export default function AdminPortfolioEditor() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Project Image
             </label>
+            
+            {/* Upload Method Selector */}
+            <div className="mb-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setUploadMethod('blob')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  uploadMethod === 'blob'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Cloud className="w-4 h-4" />
+                Vercel Blob
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMethod('firebase')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  uploadMethod === 'firebase'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                Firebase
+              </button>
+            </div>
+
             {selectedImage && (
               <div className="mb-4">
                 <img
@@ -157,14 +205,21 @@ export default function AdminPortfolioEditor() {
                   alt="Portfolio"
                   className="max-w-xs h-40 object-cover rounded-lg"
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  {uploadMethod === 'blob' ? 'Stored in Vercel Blob' : 'Stored in Firebase'}
+                </p>
               </div>
             )}
             <input
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              disabled={isUploadingImage}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             />
+            {isUploadingImage && (
+              <p className="text-xs text-blue-600 mt-2">Uploading image...</p>
+            )}
           </div>
 
           <div>
