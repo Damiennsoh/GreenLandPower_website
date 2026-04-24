@@ -755,11 +755,28 @@ export const createUserAccount = async (userData: { email: string; name: string;
       console.warn('Firebase not initialized. Demo mode.');
       return 'demo-user-id';
     }
-    const docRef = await addDoc(collection(db, 'users'), {
+    
+    // Store in userAccounts collection for proper user management
+    const docRef = await addDoc(collection(db, 'userAccounts'), {
       ...userData,
+      role: 'user', // Default role for new accounts
+      isActive: true,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+    
+    // Also maintain backward compatibility by storing in users collection
+    await addDoc(collection(db, 'users'), {
+      ...userData,
+      role: 'user',
+      isActive: true,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    
+    // Clear user cache to force refresh
+    FirebaseCache.clear(CACHE_KEYS.USERS);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating user account:', error);
@@ -832,7 +849,8 @@ export const getUsers = async (useCache = true): Promise<User[]> => {
     }
     
     console.info('Fetching users from Firebase...');
-    const querySnapshot = await getDocs(collection(db, 'users'));
+    // Fetch from userAccounts collection for proper user management
+    const querySnapshot = await getDocs(collection(db, 'userAccounts'));
     console.info('Firebase users query returned', querySnapshot.docs.length, 'documents');
     
     const users = querySnapshot.docs.map((doc) => ({
@@ -858,12 +876,11 @@ export const updateUserRole = async (userId: string, role: UserRole) => {
       console.warn('Firebase not initialized. Demo mode.');
       return;
     }
-    const docRef = doc(db, 'users', userId);
-    await updateDoc(docRef, { 
+    const docRef = doc(db, 'userAccounts', userId);
+    await updateDoc(docRef, {
       role,
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     });
-    // Clear cache after update
     FirebaseCache.clear(CACHE_KEYS.USERS);
   } catch (error) {
     console.error('Error updating user role:', error);
@@ -877,10 +894,10 @@ export const toggleUserStatus = async (userId: string, isActive: boolean) => {
       console.warn('Firebase not initialized. Demo mode.');
       return;
     }
-    const docRef = doc(db, 'users', userId);
-    await updateDoc(docRef, { 
+    const docRef = doc(db, 'userAccounts', userId);
+    await updateDoc(docRef, {
       isActive,
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     });
     // Clear cache after update
     FirebaseCache.clear(CACHE_KEYS.USERS);
@@ -896,7 +913,7 @@ export const deleteUser = async (userId: string) => {
       console.warn('Firebase not initialized. Demo mode.');
       return;
     }
-    const docRef = doc(db, 'users', userId);
+    const docRef = doc(db, 'userAccounts', userId);
     await deleteDoc(docRef);
     // Clear cache after deletion
     FirebaseCache.clear(CACHE_KEYS.USERS);

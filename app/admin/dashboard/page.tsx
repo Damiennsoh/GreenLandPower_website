@@ -10,6 +10,7 @@ import AdminServicesEditor from '@/components/admin/admin-services-editor';
 import AdminPortfolioEditor from '@/components/admin/admin-portfolio-editor';
 import AdminTeamEditor from '@/components/admin/admin-team-editor';
 import AdminSubmissionsViewer from '@/components/admin/admin-submissions-viewer';
+import { ConfirmSeedOverwriteDialog } from '@/components/admin/confirm-seed-overwrite-dialog';
 import {
   LogOut,
   MessageSquare,
@@ -31,6 +32,8 @@ export default function AdminDashboard() {
   const { user: authUser, loading: authLoading, logout, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [mounted, setMounted] = useState(false);
+  const [showSeedConfirmation, setShowSeedConfirmation] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [stats, setStats] = useState({
     contactMessages: 0,
     portfolioItems: 0,
@@ -91,7 +94,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSeedData = async () => {
+const handleSeedData = () => {
+    setShowSeedConfirmation(true);
+  };
+
+  const handleConfirmSeed = async () => {
+    setIsSeeding(true);
     try {
       const result = await seedAllData();
       if (result.success) {
@@ -101,7 +109,7 @@ export default function AdminDashboard() {
           getContactSubmissions(),
           getPortfolios(),
           getTeamMembers(),
-          getUsers(),
+          getUsers(false), // Force refresh without cache
         ]);
         setStats({
           contactMessages: contacts.length,
@@ -112,10 +120,13 @@ export default function AdminDashboard() {
           adminUsers: users.filter(u => u.role === 'admin' || u.role === 'superAdmin').length,
         });
       } else {
-        toast.error('Failed to seed data');
+        toast.error('Failed to seed data: ' + result.error);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to seed data');
+      toast.error('Error seeding data: ' + error.message);
+    } finally {
+      setIsSeeding(false);
+      setShowSeedConfirmation(false);
     }
   };
 
@@ -341,6 +352,14 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Seed Data Confirmation Dialog */}
+      <ConfirmSeedOverwriteDialog
+        isOpen={showSeedConfirmation}
+        isLoading={isSeeding}
+        onConfirm={handleConfirmSeed}
+        onCancel={() => setShowSeedConfirmation(false)}
+      />
     </div>
   );
 }

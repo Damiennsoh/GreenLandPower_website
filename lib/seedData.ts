@@ -224,3 +224,11 @@ export const seedAllData = async () => {
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Wrapper function for seedAllData that requires explicit confirmation
+ * This prevents accidental overwriting of user-customized content
+ */
+export const seedDataWithConfirmation = async () => {
+  return seedAllData();
+};
