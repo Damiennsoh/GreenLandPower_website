@@ -31,10 +31,10 @@ export default function ServicesPage() {
       <Header />
 
       {/* Page Header */}
-      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16 mt-16">
+      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-12 sm:py-16 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Our Services</h1>
-          <p className="text-green-100 text-lg">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-balance">Our Services</h1>
+          <p className="text-green-100 text-base sm:text-lg">
             Comprehensive electrical solutions for every need
           </p>
         </div>
@@ -52,11 +52,11 @@ export default function ServicesPage() {
               <p className="text-gray-500">No services available at the moment.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {services.map((service) => (
                 <div
                   key={service.id}
-                  className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  className="bg-white p-6 sm:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow h-full flex flex-col"
                 >
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">{service.title}</h2>
                   <p className="text-gray-600 mb-6">{service.description}</p>
@@ -82,17 +82,17 @@ export default function ServicesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-green-600">
+      <section className="py-12 sm:py-16 bg-green-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 text-balance">
             Need a Custom Solution?
           </h2>
-          <p className="text-green-100 text-lg mb-8">
+          <p className="text-green-100 text-base sm:text-lg mb-6 sm:mb-8">
             Contact us to discuss your specific electrical needs and project requirements.
           </p>
           <a
             href="/contact"
-            className="inline-block bg-white text-green-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors"
+            className="inline-block bg-white text-green-600 font-bold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
           >
             Contact Us Today
           </a>

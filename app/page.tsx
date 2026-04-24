@@ -10,8 +10,8 @@ import { HeroSection, Service, Portfolio } from '@/lib/types';
 import { Zap, Leaf, Shield, ArrowRight } from 'lucide-react';
 
 const defaultHero: HeroSection = {
-  title: 'Professional Electrical Solutions for Liberia',
-  subtitle: 'Residential, Commercial & Industrial Electrical Services | Generator Installation & Solar Power Systems',
+  title: 'Professional Electrical Solutions Powering Liberia\'s Future',
+  subtitle: 'Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.',
   ctaText: 'Get a Free Quote',
   ctaLink: '/contact',
   backgroundImage: '/images/hero/electrical-engineering-hero.jpg',
@@ -37,25 +37,28 @@ const defaultServices: Service[] = [
 
 const defaultPortfolios: Portfolio[] = [
   {
-    title: 'Monrovia Corporate Tower',
-    description: 'Complete electrical installation for 15-story commercial building with backup generators.',
+    title: 'Commercial Building Electrical Installation',
+    description: 'Complete electrical installation for modern commercial office complex with comprehensive power distribution systems and backup generators.',
     category: 'Commercial',
     client: 'Monrovia Development Corp',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+    image: '/images/portfolio/commercial-building.jpg',
+    result: 'Successfully completed on-time with zero safety incidents',
   },
   {
-    title: 'Solar Farm Installation',
-    description: '500kW solar power system for agricultural processing facility.',
+    title: 'Residential Solar Installation',
+    description: '25kW solar panel system installation on modern residential property, providing sustainable renewable energy and significant cost savings.',
     category: 'Solar',
-    client: 'Liberia AgriTech',
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80',
+    client: 'Liberia Eco Homes',
+    image: '/images/portfolio/solar-installation.jpg',
+    result: '85% reduction in electricity costs, 20-year warranty provided',
   },
   {
-    title: 'Hospital Power Upgrade',
-    description: 'Emergency electrical upgrade with backup systems for regional hospital.',
-    category: 'Healthcare',
-    client: 'JFK Medical Center',
-    image: 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=800&q=80',
+    title: 'Industrial Power System Upgrade',
+    description: 'Major industrial facility power upgrade with heavy-duty electrical equipment, transformers, and power distribution infrastructure.',
+    category: 'Industrial',
+    client: 'Liberia Manufacturing Ltd',
+    image: '/images/portfolio/industrial-power.jpg',
+    result: 'Increased facility capacity by 150%, improved efficiency by 30%',
   },
 ];
 
@@ -119,27 +122,27 @@ export default function Home() {
 
       {/* Hero Section */}
       <section
-        className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 pt-16"
+        className="relative w-full flex items-center justify-center pt-16 min-h-[calc(100vh-4rem)]"
         style={{
           backgroundImage: heroData.backgroundImage
-            ? `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${heroData.backgroundImage})`
+            ? `linear-gradient(135deg, rgba(5, 150, 105, 0.75) 0%, rgba(0, 0, 0, 0.6) 100%), url(${heroData.backgroundImage})`
             : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
         }}
       >
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-20">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-16 sm:py-24 lg:py-32">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight text-balance drop-shadow-lg">
             {heroData.title}
           </h1>
-          <p className="text-lg sm:text-xl text-gray-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-50 mb-6 sm:mb-8 max-w-3xl mx-auto text-pretty drop-shadow-md leading-relaxed">
             {heroData.subtitle}
           </p>
           <Button
             asChild
             size="lg"
-            className="bg-white text-green-600 hover:bg-gray-100 font-bold"
+            className="bg-white text-green-600 hover:bg-gray-100 font-bold shadow-lg text-base md:text-lg px-6 md:px-8 py-2 md:py-3"
           >
             <Link href={heroData.ctaLink}>{heroData.ctaText}</Link>
           </Button>
