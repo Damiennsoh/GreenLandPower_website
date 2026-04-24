@@ -132,21 +132,21 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
+      <div className="flex h-screen flex-col lg:flex-row">
         {/* Sidebar */}
         <AdminNav activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center">
+          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <a
                 href="/"
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
               >
                 View Site
               </a>
@@ -154,151 +154,150 @@ export default function AdminDashboard() {
                 onClick={handleLogout}
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-auto px-8 py-8">
+          <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pt-16 lg:pt-8">
             {activeTab === 'overview' && (
               <div className="space-y-8">
                 {/* Welcome Section */}
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Welcome back, {authUser?.name || authUser?.email?.split('@')[0]} 👋
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-sm sm:text-base text-gray-600">
                     Here&apos;s what&apos;s happening on Green Land Power Inc. today.
                   </p>
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <MessageSquare className="w-6 h-6 text-blue-600" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <MessageSquare className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600" />
                       </div>
                       <span className="text-xs font-medium text-gray-500 uppercase">New Messages</span>
                     </div>
-                    <p className="text-4xl font-bold text-gray-900">{stats.contactMessages}</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gray-900">{stats.contactMessages}</p>
                     <button
                       onClick={() => setActiveTab('submissions')}
-                      className="mt-4 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
+                      className="mt-3 sm:mt-4 text-xs sm:text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
                     >
-                      View details <ArrowRight className="w-4 h-4" />
+                      View details <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
                     </button>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <Image className="w-6 h-6 text-yellow-600" />
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <Image className="w-5 sm:w-6 h-5 sm:h-6 text-yellow-600" />
                       </div>
                       <span className="text-xs font-medium text-gray-500 uppercase">Portfolio Items</span>
                     </div>
-                    <p className="text-4xl font-bold text-gray-900">{stats.portfolioItems}</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gray-900">{stats.portfolioItems}</p>
                     <button
                       onClick={() => setActiveTab('portfolio')}
-                      className="mt-4 text-sm text-yellow-600 hover:text-yellow-700 flex items-center gap-1 font-medium"
+                      className="mt-3 sm:mt-4 text-xs sm:text-sm text-yellow-600 hover:text-yellow-700 flex items-center gap-1 font-medium"
                     >
-                      View details <ArrowRight className="w-4 h-4" />
+                      View details <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
                     </button>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                        <Users className="w-6 h-6 text-green-600" />
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Users className="w-5 sm:w-6 h-5 sm:h-6 text-green-600" />
                       </div>
                       <span className="text-xs font-medium text-gray-500 uppercase">Team Members</span>
                     </div>
-                    <p className="text-4xl font-bold text-gray-900">{stats.teamMembers}</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gray-900">{stats.teamMembers}</p>
                     <button
                       onClick={() => setActiveTab('team')}
-                      className="mt-4 text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"
+                      className="mt-3 sm:mt-4 text-xs sm:text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"
                     >
-                      View details <ArrowRight className="w-4 h-4" />
+                      View details <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
                     </button>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Users className="w-6 h-6 text-purple-600" />
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Users className="w-5 sm:w-6 h-5 sm:h-6 text-purple-600" />
                       </div>
                       <span className="text-xs font-medium text-gray-500 uppercase">Registered Users</span>
                     </div>
-                    <p className="text-4xl font-bold text-gray-900">{stats.totalUsers}</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gray-900">{stats.totalUsers}</p>
                     <div className="mt-2 text-xs text-gray-500">
                       {stats.activeUsers} active • {stats.adminUsers} admins
                     </div>
                     <button
                       onClick={() => setActiveTab('users')}
-                      className="mt-2 text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1 font-medium"
+                      className="mt-2 text-xs sm:text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1 font-medium"
                     >
-                      Manage users <ArrowRight className="w-4 h-4" />
+                      Manage users <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Quick Links */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Quick Links</h3>
-                  <p className="text-gray-600 text-sm mb-6">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Quick Links</h3>
+                  <p className="text-gray-600 text-xs sm:text-sm mb-4 sm:mb-6">
                     Frequently accessed administrative actions.
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     <button
                       onClick={() => setActiveTab('hero')}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-green-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-green-700 mb-2">
                         Update Hero Section
                       </h4>
-                      <p className="text-sm text-gray-600 group-hover:text-green-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-green-600">
                         Change headlines and main CTA links
                       </p>
                     </button>
 
                     <button
                       onClick={() => setActiveTab('portfolio')}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-yellow-300 hover:bg-yellow-50 transition-colors text-left"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-yellow-300 hover:bg-yellow-50 transition-colors text-left"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-yellow-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-yellow-700 mb-2">
                         Add Portfolio Item
                       </h4>
-                      <p className="text-sm text-gray-600 group-hover:text-yellow-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-yellow-600">
                         Showcase new project screenshots
                       </p>
                     </button>
 
                     <button
                       onClick={() => setActiveTab('submissions')}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-blue-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-blue-700 mb-2">
                         View Message Requests
                       </h4>
-                      <p className="text-sm text-gray-600 group-hover:text-blue-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-blue-600">
                         Follow up on business inquiries
                       </p>
                     </button>
 
                     <button
                       onClick={() => setActiveTab('team')}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors text-left"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors text-left"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-purple-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-purple-700 mb-2">
                         Manage Team Members
                       </h4>
-                      <p className="text-sm text-gray-600">Welcome, {authUser?.name}</p>
-                      <p className="text-sm text-gray-600 group-hover:text-purple-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-purple-600">
                         Update team profiles and bios
                       </p>
                     </button>
@@ -306,24 +305,24 @@ export default function AdminDashboard() {
                     <button
                       onClick={handleSeedData}
                       disabled={false}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-red-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-red-700 mb-2">
                         Seed Sample Data
                       </h4>
-                      <p className="text-sm text-gray-600 group-hover:text-red-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-red-600">
                         Populate site with sample content
                       </p>
                     </button>
 
                     <button
                       onClick={() => setActiveTab('services')}
-                      className="group p-6 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-left"
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-left"
                     >
-                      <h4 className="font-bold text-gray-900 group-hover:text-indigo-700 mb-2">
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-indigo-700 mb-2">
                         Manage Services
                       </h4>
-                      <p className="text-sm text-gray-600 group-hover:text-indigo-600">
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-indigo-600">
                         Update service offerings
                       </p>
                     </button>
