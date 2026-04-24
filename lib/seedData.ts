@@ -63,16 +63,16 @@ export const seedPortfolios = async () => {
     {
       title: 'Monrovia Corporate Tower - Full Electrical Installation',
       description: 'A comprehensive electrical infrastructure project for a modern 12-story commercial office building in downtown Monrovia. This project included the design and installation of complete electrical systems, backup power solutions, and energy-efficient lighting throughout the entire facility.',
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+      image: '/images/portfolio/commercial-building.jpg',
       category: 'Commercial',
       completionDate: '2024-08',
       client: 'West African Investment Group',
       result: 'Installed 800+ electrical outlets, 350 LED lighting fixtures, 500kVA backup generator, and smart building automation system. Achieved 30% energy savings compared to traditional installations.',
     },
     {
-      title: 'Coco Beach Residential Estate - Luxury Villas',
+      title: 'Coco Beach Residential Estate - Luxury Solar Installation',
       description: 'Premium electrical installations for 25 luxury beachfront villas featuring smart home technology, solar power integration, and high-end lighting design. Each villa includes automated systems for lighting, security, and climate control.',
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
+      image: '/images/portfolio/solar-installation.jpg',
       category: 'Residential',
       completionDate: '2024-06',
       client: 'Elite Properties Liberia Ltd.',
@@ -81,7 +81,7 @@ export const seedPortfolios = async () => {
     {
       title: 'Firestone Rubber Factory - Industrial Power Upgrade',
       description: 'Major electrical infrastructure upgrade for one of Liberia\'s largest manufacturing facilities. The project involved upgrading from 1MW to 3MW capacity, installing modern motor control systems, and implementing energy monitoring solutions.',
-      image: 'https://images.unsplash.com/photo-1565514020176-db98eb4e5f5d?w=800&q=80',
+      image: '/images/portfolio/industrial-power.jpg',
       category: 'Industrial',
       completionDate: '2024-04',
       client: 'Firestone Liberia Inc.',
@@ -90,7 +90,7 @@ export const seedPortfolios = async () => {
     {
       title: 'University of Liberia - Science Complex Modernization',
       description: 'Complete electrical modernization of the science and technology complex, serving over 2,000 students. Project included specialized laboratory electrical systems, data center power, and sustainable energy solutions.',
-      image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80',
+      image: '/images/portfolio/institutional-complex.jpg',
       category: 'Institutional',
       completionDate: '2024-02',
       client: 'University of Liberia',
@@ -99,7 +99,7 @@ export const seedPortfolios = async () => {
     {
       title: 'John F. Kennedy Medical Center - Critical Care Power',
       description: 'Installation of hospital-grade electrical systems and backup power infrastructure for the pediatric wing expansion. This life-critical project required redundant power systems and compliance with international medical facility standards.',
-      image: 'https://images.unsplash.com/photo-1587351021759-3e566b9af923?w=800&q=80',
+      image: '/images/portfolio/healthcare-power.jpg',
       category: 'Healthcare',
       completionDate: '2023-12',
       client: 'Ministry of Health - Liberia',
@@ -108,7 +108,7 @@ export const seedPortfolios = async () => {
     {
       title: 'Monrovia Shopping Mall - Retail Power Solutions',
       description: 'Electrical infrastructure for a 45-store shopping complex featuring anchor tenants, restaurants, and entertainment facilities. The project required complex load balancing and aesthetically pleasing installations.',
-      image: 'https://images.unsplash.com/photo-1519567241046-7f570eee3caf?w=800&q=80',
+      image: '/images/portfolio/retail-electrical.jpg',
       category: 'Commercial',
       completionDate: '2023-10',
       client: 'RLJ Kendeja Shopping Centers',
@@ -186,11 +186,11 @@ export const seedTeamMembers = async () => {
 
 export const seedHeroSection = async () => {
   const heroData: HeroSection = {
-    title: 'Powering Liberia\'s Future with Excellence',
-    subtitle: 'Comprehensive electrical solutions for residential, commercial & industrial needs. Expert generator installations, solar power systems, and 24/7 emergency services across Liberia.',
-    ctaText: 'Get Your Free Quote Today',
+    title: 'Professional Electrical Solutions Powering Liberia\'s Future',
+    subtitle: 'Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.',
+    ctaText: 'Get a Free Quote',
     ctaLink: '/contact',
-    backgroundImage: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=1920&q=80',
+    backgroundImage: '/images/hero/electrical-engineering-hero.jpg',
   };
 
   try {

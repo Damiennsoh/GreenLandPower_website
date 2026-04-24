@@ -12,9 +12,9 @@ export default function Header() {
 
   const navItems = [
     { label: 'Home', href: '/' },
-    { label: 'About', href: '/about' },
     { label: 'Services', href: '/services' },
     { label: 'Portfolio', href: '/portfolio' },
+    { label: 'About', href: '/about' },
     { label: 'Team', href: '/team' },
     { label: 'Contact', href: '/contact' },
   ];
@@ -26,7 +26,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 w-full bg-white shadow-md z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">

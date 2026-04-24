@@ -36,10 +36,10 @@ export default function PortfolioPage() {
       <Header />
 
       {/* Page Header */}
-      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16 mt-16">
+      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-12 sm:py-16 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Our Portfolio</h1>
-          <p className="text-green-100 text-lg">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-balance">Our Portfolio</h1>
+          <p className="text-green-100 text-base sm:text-lg">
             Showcase of completed projects and successful installations
           </p>
         </div>
@@ -50,9 +50,9 @@ export default function PortfolioPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Category Filter */}
           {!loading && categories.length > 0 && (
-            <div className="mb-12">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Filter by Category</h3>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-8 sm:mb-12">
+              <h3 className="text-lg font-bold text-gray-900 mb-3 sm:mb-4">Filter by Category</h3>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 <button
                   onClick={() => setSelectedCategory(null)}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -90,14 +90,14 @@ export default function PortfolioPage() {
               <p className="text-gray-500">No projects available in this category.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredPortfolios.map((portfolio) => (
                 <div
                   key={portfolio.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col"
                 >
                   {portfolio.image && (
-                    <div className="h-48 overflow-hidden">
+                    <div className="h-40 sm:h-48 overflow-hidden">
                       <img
                         src={portfolio.image}
                         alt={portfolio.title}
@@ -140,17 +140,17 @@ export default function PortfolioPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-green-600">
+      <section className="py-12 sm:py-16 bg-green-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 text-balance">
             Ready for Your Next Project?
           </h2>
-          <p className="text-green-100 text-lg mb-8">
+          <p className="text-green-100 text-base sm:text-lg mb-6 sm:mb-8">
             Let&apos;s discuss how we can help bring your electrical vision to life.
           </p>
           <a
             href="/contact"
-            className="inline-block bg-white text-green-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors"
+            className="inline-block bg-white text-green-600 font-bold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
           >
             Start Your Project
           </a>

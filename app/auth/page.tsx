@@ -121,14 +121,26 @@ export default function Auth() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
 
-        <div className="flex-1 flex items-center justify-center py-16 px-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-8">
+        <div className="flex-1 flex items-center justify-center py-8 sm:py-16 px-4 relative min-h-[calc(100vh-4rem)]"
+          style={{
+            backgroundImage: 'linear-gradient(135deg, rgba(5, 150, 105, 0.85) 0%, rgba(0, 0, 0, 0.75) 100%), url(/images/auth/electrical-engineering-auth.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-green-200/20 p-6 sm:p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">Forgot Password</h1>
-              <p className="text-gray-600 mt-2">Enter your email to reset your password</p>
+              <div className="mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg">
+                  <span className="text-white font-bold text-lg">🔑</span>
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900">Reset Password</h1>
+              <p className="text-gray-600 mt-2 text-sm">Enter your email to receive reset instructions</p>
             </div>
 
             <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -176,41 +188,53 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <div className="flex-1 flex items-center justify-center py-16 px-4">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-8">
+      <div className="flex-1 flex items-center justify-center py-8 sm:py-16 px-4 relative min-h-[calc(100vh-4rem)]"
+        style={{
+          backgroundImage: 'linear-gradient(135deg, rgba(5, 150, 105, 0.85) 0%, rgba(0, 0, 0, 0.75) 100%), url(/images/auth/electrical-engineering-auth.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-green-200/20 p-6 sm:p-8">
           <div className="text-center mb-8">
+            <div className="mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg">
+                <span className="text-white font-bold text-lg">⚡</span>
+              </div>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {isSignIn ? 'Sign In' : 'Create Account'}
+              {isSignIn ? 'Welcome Back' : 'Join Our Team'}
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-2 text-sm">
               {isSignIn 
-                ? 'Welcome back to Green Land Power Inc.' 
-                : 'Join Green Land Power Inc.'
+                ? 'Professional electrical solutions at your fingertips' 
+                : 'Become part of Liberia&apos;s leading electrical engineering company'
               }
             </p>
           </div>
 
           {/* Toggle Buttons */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <div className="flex mb-6 gap-2 bg-gray-100/80 rounded-lg p-1">
             <button
               onClick={() => setIsSignIn(true)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all ${
                 isSignIn
-                  ? 'bg-white text-green-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 bg-transparent'
               }`}
             >
               Sign In
             </button>
             <button
               onClick={() => setIsSignIn(false)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all ${
                 !isSignIn
-                  ? 'bg-white text-green-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 bg-transparent'
               }`}
             >
               Sign Up
@@ -418,13 +442,16 @@ export default function Auth() {
             </form>
           )}
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-gray-700 mb-2">
-              {isSignIn 
-                ? 'Sign in to access your account, submit quotes, and manage your inquiries.'
-                : 'By signing up, you\'ll be able to submit project quotes and contact requests to our team.'
-              }
-            </p>
+          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="flex gap-2 items-start">
+              <span className="text-lg mt-0.5">⚡</span>
+              <p className="text-sm text-gray-700">
+                {isSignIn 
+                  ? 'Access your account to submit inquiries and track your electrical projects with us.'
+                  : 'Join us to submit project requests and connect with professional electrical engineers.'
+                }
+              </p>
+            </div>
           </div>
         </div>
       </div>
