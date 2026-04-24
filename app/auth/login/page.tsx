@@ -6,14 +6,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getUserByEmail } from '@/lib/firebaseService';
-import { useAuth } from '@/lib/useAuth';
 import { toast } from 'sonner';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +27,7 @@ export default function Login() {
         return;
       }
 
-      // Check if user exists
+      // Check if user exists in Firestore
       const user = await getUserByEmail(email);
       if (!user) {
         toast.error('User not found. Please sign up first.');
@@ -37,14 +35,18 @@ export default function Login() {
         return;
       }
 
-      // Login user
-      login({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        company: user.company,
-      });
+      // Save session to localStorage so the user is logged in
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('glp_user_session', JSON.stringify({
+          id: (user as any).uid || (user as any).id,
+          name: (user as any).name,
+          email: (user as any).email,
+          phone: (user as any).phone,
+          company: (user as any).company,
+          role: (user as any).role || 'user',
+          isActive: (user as any).isActive ?? true,
+        }));
+      }
 
       toast.success('Logged in successfully!');
       router.push('/auth/dashboard');

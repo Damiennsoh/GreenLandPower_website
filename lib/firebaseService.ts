@@ -36,6 +36,96 @@ import {
   UserRole,
 } from './types';
 
+// Demo Data
+const DEMO_SERVICES: Service[] = [
+  {
+    id: 'demo-1',
+    title: 'Residential Electrical Installation',
+    description: 'Complete electrical wiring and installation services for homes and apartments.',
+    icon: 'Home',
+    features: ['New Construction Wiring', 'Electrical Panel Upgrades', 'Lighting Installation'],
+  },
+  {
+    id: 'demo-2',
+    title: 'Commercial Electrical Solutions',
+    description: 'Comprehensive electrical services for businesses, offices, and commercial buildings.',
+    icon: 'Building',
+    features: ['Commercial Wiring Systems', 'Emergency Generator Installation', 'Scheduled Maintenance'],
+  },
+  {
+    id: 'demo-3',
+    title: 'Solar Power Systems',
+    description: 'Solar panel installation and renewable energy solutions for sustainable power generation.',
+    icon: 'Sun',
+    features: ['Solar Panel Installation', 'Battery Storage Systems', 'Grid-Tie Integration'],
+  },
+];
+
+const DEMO_PORTFOLIO: Portfolio[] = [
+  {
+    id: 'demo-1',
+    title: 'Monrovia Office Complex',
+    description: 'Complete electrical installation for a 5-story commercial office building in downtown Monrovia.',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+    category: 'Commercial',
+    completionDate: '2024-03',
+    client: 'Liberia Business Center',
+    result: 'Successfully installed 500+ electrical outlets and backup generator system.',
+  },
+  {
+    id: 'demo-2',
+    title: 'Sinkor Residential Development',
+    description: 'Electrical wiring for 50-unit residential apartment complex in Sinkor.',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
+    category: 'Residential',
+    completionDate: '2024-02',
+    client: 'Golden Homes Ltd.',
+    result: 'Completed full electrical installation including smart home features.',
+  },
+];
+
+const DEMO_TEAM: TeamMember[] = [
+  {
+    id: 'demo-1',
+    name: 'James K. Wilson',
+    position: 'Chief Executive Officer & Founder',
+    bio: 'Electrical engineer with 18+ years of experience in power systems and renewable energy.',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80',
+    email: 'j.wilson@greenlandpower.com.lr',
+  },
+  {
+    id: 'demo-2',
+    name: 'Sarah M. Johnson',
+    position: 'Operations Manager',
+    bio: 'Expertise in project management and electrical operations with 10 years of experience.',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
+    email: 's.johnson@greenlandpower.com.lr',
+  },
+];
+
+const DEMO_ADMIN_SETTINGS: AdminSettings = {
+  heroSection: {
+    title: "Professional Electrical Solutions Powering Liberia's Future",
+    subtitle: "Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.",
+    ctaText: "Get a Free Quote",
+    ctaLink: "/contact",
+    backgroundImage: "/hero-green-power.jpg"
+  },
+  footerContent: {
+    companyName: "Green Land Power Inc.",
+    address: "Monrovia, Liberia",
+    phone: "+231 77 000 0000",
+    email: "info@greenlandpower.com",
+    socialLinks: {
+      facebook: "#",
+      twitter: "#",
+      linkedin: "#",
+      instagram: "#"
+    },
+    copyright: "© 2024 Green Land Power Inc. All rights reserved."
+  }
+};
+
 // Admin Settings
 export const updateHeroSection = async (heroData: HeroSection) => {
   try {
@@ -85,17 +175,17 @@ export const getAdminSettings = async (): Promise<AdminSettings | null> => {
   try {
     if (!db) {
       console.warn('Firebase not initialized. Demo mode.');
-      return null;
+      return DEMO_ADMIN_SETTINGS;
     }
     const adminRef = doc(db, 'admin', 'settings');
     const docSnap = await getDoc(adminRef);
     if (docSnap.exists()) {
       return docSnap.data() as AdminSettings;
     }
-    return null;
+    return DEMO_ADMIN_SETTINGS;
   } catch (error) {
     console.error('Error getting admin settings:', error);
-    throw error;
+    return DEMO_ADMIN_SETTINGS;
   }
 };
 
@@ -106,13 +196,19 @@ export const onAdminSettingsChange = (callback: (data: AdminSettings | null) => 
       return () => {};
     }
     const adminRef = doc(db, 'admin', 'settings');
-    return onSnapshot(adminRef, (docSnap) => {
-      if (docSnap.exists()) {
-        callback(docSnap.data() as AdminSettings);
-      } else {
-        callback(null);
+    return onSnapshot(adminRef, 
+      (docSnap) => {
+        if (docSnap.exists()) {
+          callback(docSnap.data() as AdminSettings);
+        } else {
+          callback(DEMO_ADMIN_SETTINGS);
+        }
+      },
+      (error) => {
+        console.error('Error in admin settings listener:', error);
+        callback(DEMO_ADMIN_SETTINGS);
       }
-    });
+    );
   } catch (error) {
     console.error('Error setting up admin settings listener:', error);
     throw error;
@@ -187,7 +283,7 @@ export const getServices = async (useCache = true): Promise<Service[]> => {
     
     if (!db) {
       console.info('Firebase not initialized. Demo mode.');
-      return [];
+      return DEMO_SERVICES;
     }
     
     const querySnapshot = await getDocs(
@@ -204,7 +300,7 @@ export const getServices = async (useCache = true): Promise<Service[]> => {
     return services;
   } catch (error) {
     console.error('Error getting services:', error);
-    return [];
+    return DEMO_SERVICES;
   }
 };
 
@@ -222,6 +318,10 @@ export const onServicesChange = (callback: (data: Service[]) => void) => {
           ...doc.data(),
         })) as Service[];
         callback(services);
+      },
+      (error) => {
+        console.error('Error in services listener:', error);
+        callback(DEMO_SERVICES);
       }
     );
   } catch (error) {
@@ -298,58 +398,7 @@ export const getPortfolios = async (useCache = true): Promise<Portfolio[]> => {
     
     if (!db) {
       console.info('Firebase not initialized. Returning demo portfolio data.');
-      return [
-        {
-          id: '1',
-          title: 'Monrovia Office Complex',
-          description: 'Complete electrical installation for a 5-story commercial office building in downtown Monrovia.',
-          image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
-          category: 'Commercial',
-          completionDate: '2024-03',
-          client: 'Liberia Business Center',
-          result: 'Successfully installed 500+ electrical outlets, 200 lighting fixtures, and backup generator system.',
-        },
-        {
-          id: '2',
-          title: 'Sinkor Residential Development',
-          description: 'Electrical wiring for 50-unit residential apartment complex in Sinkor.',
-          image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
-          category: 'Residential',
-          completionDate: '2024-02',
-          client: 'Golden Homes Ltd.',
-          result: 'Completed full electrical installation including smart home features and solar water heating.',
-        },
-        {
-          id: '3',
-          title: 'Freeport Industrial Facility',
-          description: 'Heavy-duty electrical installation for manufacturing facility at Freeport.',
-          image: 'https://images.unsplash.com/photo-1565514020176-db98eb4e5f5d?w=800&q=80',
-          category: 'Industrial',
-          completionDate: '2024-01',
-          client: 'Liberia Manufacturing Co.',
-          result: 'Installed 3-phase power systems, heavy machinery wiring, and comprehensive safety systems.',
-        },
-        {
-          id: '4',
-          title: 'Paynesville School Project',
-          description: 'Electrical systems for new educational facility serving 1000+ students.',
-          image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80',
-          category: 'Institutional',
-          completionDate: '2023-12',
-          client: 'Ministry of Education',
-          result: 'Provided complete electrical infrastructure including computer labs and security systems.',
-        },
-        {
-          id: '5',
-          title: 'Benson Street Hospital',
-          description: 'Critical electrical systems for medical facility with backup power solutions.',
-          image: 'https://images.unsplash.com/photo-1587351021759-3e566b9af923?w=800&q=80',
-          category: 'Healthcare',
-          completionDate: '2023-11',
-          client: 'Liberia Medical Center',
-          result: 'Installed hospital-grade electrical systems with redundant power for life support equipment.',
-        },
-      ];
+      return DEMO_PORTFOLIO;
     }
     const querySnapshot = await getDocs(
       query(collection(db, 'portfolio'), orderBy('createdAt', 'desc'))
@@ -365,7 +414,7 @@ export const getPortfolios = async (useCache = true): Promise<Portfolio[]> => {
     return portfolios;
   } catch (error) {
     console.error('Error getting portfolio:', error);
-    return [];
+    return DEMO_PORTFOLIO;
   }
 };
 
@@ -387,6 +436,10 @@ export const onPortfolioChange = (callback: (data: Portfolio[]) => void) => {
           ...doc.data(),
         })) as Portfolio[];
         callback(portfolio);
+      },
+      (error) => {
+        console.error('Error in portfolio listener:', error);
+        callback(DEMO_PORTFOLIO);
       }
     );
   } catch (error) {
@@ -463,40 +516,7 @@ export const getTeamMembers = async (useCache = true): Promise<TeamMember[]> => 
     
     if (!db) {
       console.info('Firebase not initialized. Returning demo team data.');
-      return [
-        {
-          id: '1',
-          name: 'James K. Wilson',
-          position: 'Chief Executive Officer & Founder',
-          bio: 'Electrical engineer with 18+ years of experience in power systems, renewable energy, and large-scale infrastructure projects across West Africa.',
-          image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80',
-          email: 'j.wilson@greenlandpower.com.lr',
-        },
-        {
-          id: '2',
-          name: 'Sarah M. Johnson',
-          position: 'Operations Manager',
-          bio: 'Expertise in project management and electrical operations with 10 years of experience in Liberia\'s energy sector.',
-          image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
-          email: 's.johnson@greenlandpower.com.lr',
-        },
-        {
-          id: '3',
-          name: 'Robert B. Williams',
-          position: 'Lead Electrical Engineer',
-          bio: 'Licensed electrical engineer specializing in commercial and industrial electrical systems design and implementation.',
-          image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
-          email: 'r.williams@greenlandpower.com.lr',
-        },
-        {
-          id: '4',
-          name: 'Grace T. Cooper',
-          position: 'Safety & Compliance Officer',
-          bio: 'Certified safety professional ensuring all projects meet international electrical safety standards and Liberian regulations.',
-          image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80',
-          email: 'g.cooper@greenlandpower.com.lr',
-        },
-      ];
+      return DEMO_TEAM;
     }
     const querySnapshot = await getDocs(
       query(collection(db, 'team'), orderBy('createdAt', 'desc'))
@@ -512,7 +532,7 @@ export const getTeamMembers = async (useCache = true): Promise<TeamMember[]> => 
     return team;
   } catch (error) {
     console.error('Error getting team members:', error);
-    return [];
+    return DEMO_TEAM;
   }
 };
 
@@ -530,6 +550,10 @@ export const onTeamMembersChange = (callback: (data: TeamMember[]) => void) => {
           ...doc.data(),
         })) as TeamMember[];
         callback(team);
+      },
+      (error) => {
+        console.error('Error in team listener:', error);
+        callback(DEMO_TEAM);
       }
     );
   } catch (error) {
@@ -629,6 +653,10 @@ export const onContactSubmissionsChange = (callback: (data: ContactSubmission[])
           ...doc.data(),
         })) as ContactSubmission[];
         callback(submissions);
+      },
+      (error) => {
+        console.error('Error in contact submissions listener:', error);
+        callback([]);
       }
     );
   } catch (error) {
@@ -709,6 +737,10 @@ export const onQuoteRequestsChange = (callback: (data: QuoteRequest[]) => void) 
           ...doc.data(),
         })) as QuoteRequest[];
         callback(requests);
+      },
+      (error) => {
+        console.error('Error in quote requests listener:', error);
+        callback([]);
       }
     );
   } catch (error) {
@@ -756,28 +788,21 @@ export const createUserAccount = async (userData: { email: string; name: string;
       return 'demo-user-id';
     }
     
-    // Store in userAccounts collection for proper user management
-    const docRef = await addDoc(collection(db, 'userAccounts'), {
+    // Generate a doc ref so we can embed the uid in the data
+    const newDocRef = doc(collection(db, 'users'));
+    const uid = newDocRef.id;
+
+    await setDoc(newDocRef, {
       ...userData,
-      role: 'user', // Default role for new accounts
-      isActive: true,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
-    
-    // Also maintain backward compatibility by storing in users collection
-    await addDoc(collection(db, 'users'), {
-      ...userData,
+      uid,
       role: 'user',
       isActive: true,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
     
-    // Clear user cache to force refresh
     FirebaseCache.clear(CACHE_KEYS.USERS);
-    
-    return docRef.id;
+    return uid;
   } catch (error) {
     console.error('Error creating user account:', error);
     throw error;
@@ -788,32 +813,28 @@ export const getUserByEmail = async (email: string) => {
   try {
     if (!db) {
       console.info('Firebase not initialized. Demo mode.');
-      // Return demo user for admin credentials
-      if (email === 'admin@greenland.com') {
-        return {
-          id: 'demo-admin-id',
-          email: 'admin@greenland.com',
-          name: 'Admin User',
-          phone: '+231-777-123-456',
-          company: 'Green Land Power Inc.',
-        };
-      }
       return null;
     }
-    const querySnapshot = await getDocs(
+    // Query userAccounts (the primary user store) first
+    const accountsSnapshot = await getDocs(
+      query(collection(db, 'userAccounts'), where('email', '==', email))
+    );
+    if (!accountsSnapshot.empty) {
+      const userDoc = accountsSnapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() };
+    }
+    // Fallback: check legacy users collection
+    const usersSnapshot = await getDocs(
       query(collection(db, 'users'), where('email', '==', email))
     );
-    if (querySnapshot.empty) {
-      return null;
+    if (!usersSnapshot.empty) {
+      const userDoc = usersSnapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() };
     }
-    const doc = querySnapshot.docs[0];
-    return {
-      id: doc.id,
-      ...doc.data(),
-    };
+    return null;
   } catch (error) {
     console.error('Error getting user:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -822,47 +843,24 @@ export const getUsers = async (useCache = true): Promise<User[]> => {
     if (!db) {
       console.info('Firebase not initialized. Returning demo users.');
       return [
-        {
-          uid: 'demo-admin-uid',
-          email: 'admin@greenland.com',
-          name: 'Admin User',
-          role: 'superAdmin',
-          isActive: true,
-        },
-        {
-          uid: 'demo-user-uid',
-          email: 'user@example.com',
-          name: 'Regular User',
-          role: 'user',
-          isActive: true,
-        },
+        { uid: 'demo-admin-uid', email: 'admin@greenland.com', name: 'Admin User', role: 'superAdmin', isActive: true },
+        { uid: 'demo-user-uid', email: 'user@example.com', name: 'Regular User', role: 'user', isActive: true },
       ];
     }
     
-    // Check cache first (only if useCache is true)
     if (useCache) {
       const cached = FirebaseCache.get<User[]>(CACHE_KEYS.USERS);
-      if (cached && cached.length > 0) {
-        console.info('Using cached users data:', cached.length, 'users');
-        return cached;
-      }
+      if (cached && cached.length > 0) return cached;
     }
     
-    console.info('Fetching users from Firebase...');
-    // Fetch from userAccounts collection for proper user management
-    const querySnapshot = await getDocs(collection(db, 'userAccounts'));
-    console.info('Firebase users query returned', querySnapshot.docs.length, 'documents');
-    
-    const users = querySnapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
+    // Single source of truth: the 'users' collection
+    const querySnapshot = await getDocs(collection(db, 'users'));
+    const users = querySnapshot.docs.map((d) => ({
+      uid: d.id,
+      ...d.data(),
     })) as User[];
     
-    console.info('Mapped users:', users.length, 'users');
-    
-    // Cache the results
     FirebaseCache.set(CACHE_KEYS.USERS, users);
-    
     return users;
   } catch (error) {
     console.error('Error getting users:', error);
@@ -872,15 +870,8 @@ export const getUsers = async (useCache = true): Promise<User[]> => {
 
 export const updateUserRole = async (userId: string, role: UserRole) => {
   try {
-    if (!db) {
-      console.warn('Firebase not initialized. Demo mode.');
-      return;
-    }
-    const docRef = doc(db, 'userAccounts', userId);
-    await updateDoc(docRef, {
-      role,
-      updatedAt: Timestamp.now(),
-    });
+    if (!db) { console.warn('Firebase not initialized. Demo mode.'); return; }
+    await updateDoc(doc(db, 'users', userId), { role, updatedAt: Timestamp.now() });
     FirebaseCache.clear(CACHE_KEYS.USERS);
   } catch (error) {
     console.error('Error updating user role:', error);
@@ -890,16 +881,8 @@ export const updateUserRole = async (userId: string, role: UserRole) => {
 
 export const toggleUserStatus = async (userId: string, isActive: boolean) => {
   try {
-    if (!db) {
-      console.warn('Firebase not initialized. Demo mode.');
-      return;
-    }
-    const docRef = doc(db, 'userAccounts', userId);
-    await updateDoc(docRef, {
-      isActive,
-      updatedAt: Timestamp.now(),
-    });
-    // Clear cache after update
+    if (!db) { console.warn('Firebase not initialized. Demo mode.'); return; }
+    await updateDoc(doc(db, 'users', userId), { isActive, updatedAt: Timestamp.now() });
     FirebaseCache.clear(CACHE_KEYS.USERS);
   } catch (error) {
     console.error('Error toggling user status:', error);
@@ -909,13 +892,8 @@ export const toggleUserStatus = async (userId: string, isActive: boolean) => {
 
 export const deleteUser = async (userId: string) => {
   try {
-    if (!db) {
-      console.warn('Firebase not initialized. Demo mode.');
-      return;
-    }
-    const docRef = doc(db, 'userAccounts', userId);
-    await deleteDoc(docRef);
-    // Clear cache after deletion
+    if (!db) { console.warn('Firebase not initialized. Demo mode.'); return; }
+    await deleteDoc(doc(db, 'users', userId));
     FirebaseCache.clear(CACHE_KEYS.USERS);
   } catch (error) {
     console.error('Error deleting user:', error);

@@ -1,65 +1,61 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection - Allow admins to read all, users to read own
+
+    // ─── USERS (single source of truth for all accounts) ───────────────────
     match /users/{userId} {
-      // Allow anyone to create their own user account
-      allow create: if request.resource.data.uid == userId;
-      
-      // Allow users to read their own profile, admins to read all
-      allow read: if request.auth != null && 
-                    (request.auth.uid == userId || 
-                     request.auth.token.role == 'admin' || 
+      // Anyone can create a user document (signup flow, no Firebase Auth required)
+      allow create: if request.resource.data.uid != null;
+
+      // Public read so the admin dashboard (demo login) can show user counts
+      allow read: if true;
+
+      // Users can update their own profile; admins can update any
+      allow update: if request.auth != null &&
+                    (request.auth.uid == userId ||
+                     request.auth.token.role == 'admin' ||
                      request.auth.token.role == 'superAdmin');
-      
-      // Allow users to update their own profile (except role), admins can update any
-      allow update: if request.auth != null && 
-                    ((request.auth.uid == userId &&
-                      request.resource.data.role == resource.data.role) ||
-                     request.auth.token.role == 'admin' || 
-                     request.auth.token.role == 'superAdmin');
-      
-      // Allow delete by SuperAdmin only
-      allow delete: if request.auth != null && 
+
+      // Delete only by SuperAdmin
+      allow delete: if request.auth != null &&
                        request.auth.token.role == 'superAdmin';
     }
 
-    // Admin settings - Allow all authenticated users for now
+    // ─── ADMIN SETTINGS ─────────────────────────────────────────────────────
+    // Public read/write for demo mode (admin uses sessionStorage, not Firebase Auth)
     match /admin/{document} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
-    // Services collection - Everyone can read, authenticated can write
+    // ─── PUBLIC CONTENT (read by everyone) ──────────────────────────────────
     match /services/{serviceId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Portfolio collection - Everyone can read, authenticated can write
     match /portfolio/{portfolioId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Team collection - Everyone can read, authenticated can write
     match /team/{teamId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Contact submissions - Anyone can create, authenticated can read/update
+    // ─── FORM SUBMISSIONS ────────────────────────────────────────────────────
+    // Anyone can submit; admin dashboard can read (demo mode = no Firebase Auth)
     match /submissions/contact/messages/{messageId} {
       allow create: if true;
-      allow read, update: if request.auth != null;
+      allow read, update: if true;
     }
 
-    // Quote requests - Anyone can create, authenticated can read/update
     match /submissions/quotes/requests/{requestId} {
       allow create: if true;
-      allow read, update: if request.auth != null;
+      allow read, update: if true;
     }
 
-    // User profiles - Users can manage their own
+    // ─── USER PROFILES (legacy, keep for compatibility) ──────────────────────
     match /userProfiles/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

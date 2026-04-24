@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: 'Green Land Power',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.png',
     apple: '/apple-touch-icon.png',
   },
   openGraph: {

@@ -6,14 +6,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createUserAccount } from '@/lib/firebaseService';
-import { useAuth } from '@/lib/useAuth';
 import { toast } from 'sonner';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 
 export default function SignUp() {
   const router = useRouter();
-  const { signup } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -36,7 +34,6 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      // Validation
       if (!formData.name || !formData.email) {
         toast.error('Please fill in all required fields');
         setIsLoading(false);
@@ -63,14 +60,18 @@ export default function SignUp() {
         company: formData.company,
       });
 
-      // Log user in
-      signup({
-        id: userId,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        company: formData.company,
-      });
+      // Save session to localStorage so the user is "logged in"
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('glp_user_session', JSON.stringify({
+          id: userId,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          role: 'user',
+          isActive: true,
+        }));
+      }
 
       toast.success('Account created successfully!');
       router.push('/auth/dashboard');
