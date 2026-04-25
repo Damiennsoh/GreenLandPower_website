@@ -28,6 +28,8 @@ import {
   Service,
   Portfolio,
   TeamMember,
+  Testimonial,
+  ContactInfo,
   ContactSubmission,
   QuoteRequest,
   AdminSettings,
@@ -100,6 +102,35 @@ const DEMO_TEAM: TeamMember[] = [
     bio: 'Expertise in project management and electrical operations with 10 years of experience.',
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
     email: 's.johnson@greenlandpower.com.lr',
+  },
+];
+
+const DEMO_TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'demo-1',
+    name: 'Robert Tweh',
+    position: 'Hotel Manager',
+    company: 'Ocean View Hotel',
+    content: 'Green Land Power provided exceptional service during our full electrical system upgrade. Their team was professional, efficient, and ensured we had minimal downtime.',
+    rating: 5,
+    isFeatured: true,
+  },
+  {
+    id: 'demo-2',
+    name: 'Marie Kollie',
+    position: 'Homeowner',
+    content: 'The solar installation they did for my home has been a life-changer. Reliable power at last! I highly recommend their renewable energy solutions.',
+    rating: 5,
+    isFeatured: true,
+  },
+  {
+    id: 'demo-3',
+    name: 'John Flomo',
+    position: 'Facility Director',
+    company: 'Monrovia Shopping Mall',
+    content: 'Excellent industrial electrical work. They handled our complex wiring and backup generator systems with great expertise.',
+    rating: 5,
+    isFeatured: true,
   },
 ];
 
@@ -621,6 +652,111 @@ export const onTeamMembersChange = (callback: (data: TeamMember[]) => void) => {
   }
 };
 
+// Testimonials
+export const addTestimonial = async (testimonialData: Testimonial) => {
+  try {
+    if (!db) {
+      console.warn('Firebase not initialized. Demo mode.');
+      return 'demo-testimonial-id';
+    }
+    const docRef = await addDoc(collection(db, 'testimonials'), {
+      ...testimonialData,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    FirebaseCache.clear(CACHE_KEYS.TESTIMONIALS);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding testimonial:', error);
+    throw error;
+  }
+};
+
+export const updateTestimonial = async (id: string, testimonialData: Partial<Testimonial>) => {
+  try {
+    if (!db) {
+      console.warn('Firebase not initialized. Demo mode.');
+      return;
+    }
+    const docRef = doc(db, 'testimonials', id);
+    await updateDoc(docRef, {
+      ...testimonialData,
+      updatedAt: Timestamp.now(),
+    });
+    FirebaseCache.clear(CACHE_KEYS.TESTIMONIALS);
+  } catch (error) {
+    console.error('Error updating testimonial:', error);
+    throw error;
+  }
+};
+
+export const deleteTestimonial = async (id: string) => {
+  try {
+    if (!db) {
+      console.warn('Firebase not initialized. Demo mode.');
+      return;
+    }
+    await deleteDoc(doc(db, 'testimonials', id));
+    FirebaseCache.clear(CACHE_KEYS.TESTIMONIALS);
+  } catch (error) {
+    console.error('Error deleting testimonial:', error);
+    throw error;
+  }
+};
+
+export const getTestimonials = async (useCache = true): Promise<Testimonial[]> => {
+  try {
+    if (useCache) {
+      const cached = FirebaseCache.get<Testimonial[]>(CACHE_KEYS.TESTIMONIALS);
+      if (cached) return cached;
+    }
+    
+    if (!db) {
+      console.info('Firebase not initialized. Returning demo testimonials.');
+      return DEMO_TESTIMONIALS;
+    }
+    const querySnapshot = await getDocs(
+      query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
+    );
+    const testimonials = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Testimonial[];
+    
+    FirebaseCache.set(CACHE_KEYS.TESTIMONIALS, testimonials);
+    return testimonials;
+  } catch (error) {
+    console.error('Error getting testimonials:', error);
+    return DEMO_TESTIMONIALS;
+  }
+};
+
+export const onTestimonialsChange = (callback: (data: Testimonial[]) => void) => {
+  try {
+    if (!db) {
+      console.info('Firebase not initialized. Demo mode.');
+      return () => {};
+    }
+    return onSnapshot(
+      query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')),
+      (querySnapshot) => {
+        const testimonials = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Testimonial[];
+        callback(testimonials);
+      },
+      (error) => {
+        console.error('Error in testimonials listener:', error);
+        callback(DEMO_TESTIMONIALS);
+      }
+    );
+  } catch (error) {
+    console.error('Error setting up testimonials listener:', error);
+    throw error;
+  }
+};
+
 // Contact Submissions
 export const addContactSubmission = async (submission: Omit<ContactSubmission, 'id'>) => {
   try {
@@ -983,6 +1119,10 @@ export const getUserById = async (userId: string) => {
 
 export const updateUserAccount = async (userId: string, userData: Partial<any>) => {
   try {
+    if (!db) {
+      console.warn('Firebase not initialized. Demo mode.');
+      return;
+    }
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, {
       ...userData,

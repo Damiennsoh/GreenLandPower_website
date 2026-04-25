@@ -80,6 +80,19 @@ export interface TeamMember {
   updatedAt?: Date;
 }
 
+export interface Testimonial {
+  id?: string;
+  name: string;
+  position: string;
+  company?: string;
+  content: string;
+  rating: number;
+  image?: string;
+  isFeatured: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface ContactSubmission {
   id?: string;
   name: string;

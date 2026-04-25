@@ -12,9 +12,10 @@ import {
   Mail,
   Menu,
   X,
+  Quote,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'submissions' | 'users';
+type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'testimonials' | 'submissions' | 'users';
 
 interface AdminNavProps {
   activeTab: Tab;
@@ -29,6 +30,7 @@ const navItems = [
   { id: 'services' as Tab, label: 'Services', icon: Briefcase },
   { id: 'portfolio' as Tab, label: 'Portfolio', icon: Images },
   { id: 'team' as Tab, label: 'Team Members', icon: Users },
+  { id: 'testimonials' as Tab, label: 'Testimonials', icon: Quote },
   { id: 'submissions' as Tab, label: 'Submissions', icon: Mail },
   { id: 'users' as Tab, label: 'Users', icon: Users },
 ];

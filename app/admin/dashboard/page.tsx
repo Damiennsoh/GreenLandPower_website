@@ -9,6 +9,7 @@ import AdminFooterEditor from '@/components/admin/admin-footer-editor';
 import AdminServicesEditor from '@/components/admin/admin-services-editor';
 import AdminPortfolioEditor from '@/components/admin/admin-portfolio-editor';
 import AdminTeamEditor from '@/components/admin/admin-team-editor';
+import AdminTestimonialEditor from '@/components/admin/admin-testimonial-editor';
 import AdminContactEditor from '@/components/admin/admin-contact-editor';
 import AdminSubmissionsViewer from '@/components/admin/admin-submissions-viewer';
 import { ConfirmSeedOverwriteDialog } from '@/components/admin/confirm-seed-overwrite-dialog';
@@ -19,14 +20,15 @@ import {
   Users,
   Zap,
   ArrowRight,
+  Quote,
 } from 'lucide-react';
-import { getContactSubmissions, getPortfolios, getTeamMembers, getUsers } from '@/lib/firebaseService';
+import { getContactSubmissions, getPortfolios, getTeamMembers, getUsers, getTestimonials } from '@/lib/firebaseService';
 import { useAuth } from '@/lib/useAuth';
 import { seedAllData } from '@/lib/seedData';
 import { toast } from 'sonner';
 import AdminUsersEditor from '@/components/admin/admin-users-editor';
 
-type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'users' | 'submissions';
+type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'testimonials' | 'users' | 'submissions';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -42,6 +44,7 @@ export default function AdminDashboard() {
     totalUsers: 0,
     activeUsers: 0,
     adminUsers: 0,
+    testimonials: 0,
   });
 
   useEffect(() => {
@@ -61,11 +64,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [contacts, portfolios, team, users] = await Promise.all([
+        const [contacts, portfolios, team, users, testimonials] = await Promise.all([
           getContactSubmissions(),
           getPortfolios(),
           getTeamMembers(),
-          getUsers(false), // Force refresh to get latest user count
+          getUsers(false),
+          getTestimonials(),
         ]);
         console.log('Dashboard stats fetched - Users:', users.length, users);
         setStats({
@@ -75,6 +79,7 @@ export default function AdminDashboard() {
           totalUsers: users.length,
           activeUsers: users.filter(u => u.isActive).length,
           adminUsers: users.filter(u => u.role === 'admin' || u.role === 'superAdmin').length,
+          testimonials: testimonials.length,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -106,11 +111,12 @@ const handleSeedData = () => {
       if (result.success) {
         toast.success('Sample data seeded successfully!');
         // Refresh stats
-        const [contacts, portfolios, team, users] = await Promise.all([
+        const [contacts, portfolios, team, users, testimonials] = await Promise.all([
           getContactSubmissions(),
           getPortfolios(),
           getTeamMembers(),
           getUsers(false), // Force refresh without cache
+          getTestimonials(),
         ]);
         setStats({
           contactMessages: contacts.length,
@@ -119,6 +125,7 @@ const handleSeedData = () => {
           totalUsers: users.length,
           activeUsers: users.filter(u => u.isActive).length,
           adminUsers: users.filter(u => u.role === 'admin' || u.role === 'superAdmin').length,
+          testimonials: testimonials.length,
         });
       } else {
         toast.error('Failed to seed data: ' + result.error);
@@ -350,6 +357,18 @@ const handleSeedData = () => {
                         Update phone, address & WhatsApp
                       </p>
                     </button>
+
+                    <button
+                      onClick={() => setActiveTab('testimonials')}
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-amber-300 hover:bg-amber-50 transition-colors text-left"
+                    >
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-amber-700 mb-2">
+                        Client Testimonials
+                      </h4>
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-amber-600">
+                        Manage customer feedback
+                      </p>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -361,6 +380,7 @@ const handleSeedData = () => {
             {activeTab === 'services' && <AdminServicesEditor />}
             {activeTab === 'portfolio' && <AdminPortfolioEditor />}
             {activeTab === 'team' && <AdminTeamEditor />}
+            {activeTab === 'testimonials' && <AdminTestimonialEditor />}
             {activeTab === 'users' && <AdminUsersEditor />}
             {activeTab === 'submissions' && <AdminSubmissionsViewer />}
           </div>

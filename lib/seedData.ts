@@ -5,14 +5,17 @@ import {
   updateHeroSection,
   updateFooterContent,
   updateContactInfo,
+  addTestimonial,
   getServices,
   getPortfolio,
   getTeamMembers,
+  getTestimonials,
   deleteService,
   deletePortfolio,
-  deleteTeamMember
+  deleteTeamMember,
+  deleteTestimonial
 } from './firebaseService';
-import { HeroSection, FooterContent, Service, Portfolio, TeamMember } from './types';
+import { HeroSection, FooterContent, Service, Portfolio, TeamMember, Testimonial } from './types';
 
 export const seedServices = async () => {
   const services: Service[] = [
@@ -209,6 +212,63 @@ export const seedTeamMembers = async () => {
   }
 };
 
+export const seedTestimonials = async () => {
+  const testimonials: Testimonial[] = [
+    {
+      name: 'Robert Tweh',
+      position: 'Hotel Manager',
+      company: 'Ocean View Hotel',
+      content: 'Green Land Power provided exceptional service during our full electrical system upgrade. Their team was professional, efficient, and ensured we had minimal downtime. The quality of work is outstanding.',
+      rating: 5,
+      isFeatured: true,
+    },
+    {
+      name: 'Marie Kollie',
+      position: 'Homeowner',
+      content: 'The solar installation they did for my home has been a life-changer. Reliable power at last! Their technicians were very knowledgeable and explained everything clearly. Highly recommended!',
+      rating: 5,
+      isFeatured: true,
+    },
+    {
+      name: 'John Flomo',
+      position: 'Facility Director',
+      company: 'Monrovia Shopping Mall',
+      content: 'Excellent industrial electrical work. They handled our complex wiring and backup generator systems with great expertise. They are definitely our go-to for all electrical needs.',
+      rating: 5,
+      isFeatured: true,
+    },
+    {
+      name: 'Sarah Benson',
+      position: 'Real Estate Developer',
+      content: 'Working with GLP on our recent apartment complex was a breeze. They delivered on time and within budget, which is rare in this industry. Their safety standards are top-notch.',
+      rating: 5,
+      isFeatured: false,
+    },
+    {
+      name: 'David Koroma',
+      position: 'Clinic Administrator',
+      content: 'Critical care power is non-negotiable for us. GLP installed a redundant system that gives us peace of mind 24/7. Truly a professional firm.',
+      rating: 5,
+      isFeatured: false,
+    },
+  ];
+
+  try {
+    const existing = await getTestimonials(false);
+    for (const t of existing) {
+      if (t.id) await deleteTestimonial(t.id);
+    }
+
+    for (const t of testimonials) {
+      await addTestimonial(t);
+    }
+    return { success: true, message: 'Testimonials seeded successfully' };
+  } catch (error: any) {
+    console.error('Error seeding testimonials:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const seedStaticContent = async () => {
   const heroData: HeroSection = {
     title: 'Professional Electrical Solutions Powering Liberia\'s Future',
@@ -262,6 +322,7 @@ export const seedAllData = async () => {
       seedServices(),
       seedPortfolios(),
       seedTeamMembers(),
+      seedTestimonials(),
       seedStaticContent(),
     ]);
 
@@ -269,7 +330,8 @@ export const seedAllData = async () => {
       services: results[0].status === 'fulfilled' ? results[0].value : { success: false, error: 'Failed' },
       portfolios: results[1].status === 'fulfilled' ? results[1].value : { success: false, error: 'Failed' },
       teamMembers: results[2].status === 'fulfilled' ? results[2].value : { success: false, error: 'Failed' },
-      heroSection: results[3].status === 'fulfilled' ? results[3].value : { success: false, error: 'Failed' },
+      testimonials: results[3].status === 'fulfilled' ? results[3].value : { success: false, error: 'Failed' },
+      heroSection: results[4].status === 'fulfilled' ? results[4].value : { success: false, error: 'Failed' },
     };
 
     return { success: true, summary };

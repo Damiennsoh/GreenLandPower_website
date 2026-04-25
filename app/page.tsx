@@ -17,6 +17,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import TestimonialsSection from '@/components/testimonials-section';
 
 const defaultHeroSlides: HeroSlide[] = [
   {
@@ -344,6 +345,8 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      <TestimonialsSection />
 
       {/* Why Choose Us */}
       <section className="py-24 bg-white">

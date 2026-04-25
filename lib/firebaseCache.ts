@@ -87,4 +87,5 @@ export const CACHE_KEYS = {
   HERO: 'hero',
   SUBMISSIONS: 'submissions',
   STATS: 'stats',
+  TESTIMONIALS: 'testimonials',
 } as const;
