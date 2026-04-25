@@ -337,8 +337,14 @@ export const addPortfolio = async (portfolioData: Portfolio) => {
       console.warn('Firebase not initialized. Demo mode.');
       return '';
     }
+    
+    // Get current count to set default order
+    const portfolios = await getPortfolios(false);
+    const order = portfolioData.order ?? portfolios.length;
+
     const docRef = await addDoc(collection(db, 'portfolio'), {
       ...portfolioData,
+      order,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
@@ -347,6 +353,25 @@ export const addPortfolio = async (portfolioData: Portfolio) => {
     return docRef.id;
   } catch (error) {
     console.error('Error adding portfolio:', error);
+    throw error;
+  }
+};
+
+export const updatePortfolioOrder = async (portfolios: Portfolio[]) => {
+  try {
+    if (!db) return;
+    const batch: any[] = []; // In a real app we'd use a writeBatch
+    
+    for (let i = 0; i < portfolios.length; i++) {
+      const p = portfolios[i];
+      if (p.id) {
+        const docRef = doc(db, 'portfolio', p.id);
+        await updateDoc(docRef, { order: i, updatedAt: Timestamp.now() });
+      }
+    }
+    FirebaseCache.clear(CACHE_KEYS.PORTFOLIO);
+  } catch (error) {
+    console.error('Error updating portfolio order:', error);
     throw error;
   }
 };
@@ -401,7 +426,7 @@ export const getPortfolios = async (useCache = true): Promise<Portfolio[]> => {
       return DEMO_PORTFOLIO;
     }
     const querySnapshot = await getDocs(
-      query(collection(db, 'portfolio'), orderBy('createdAt', 'desc'))
+      query(collection(db, 'portfolio'), orderBy('order', 'asc'))
     );
     const portfolios = querySnapshot.docs.map((doc) => ({
       id: doc.id,
@@ -429,7 +454,7 @@ export const onPortfolioChange = (callback: (data: Portfolio[]) => void) => {
       return () => {};
     }
     return onSnapshot(
-      query(collection(db, 'portfolio'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'portfolio'), orderBy('order', 'asc')),
       (querySnapshot) => {
         const portfolio = querySnapshot.docs.map((doc) => ({
           id: doc.id,

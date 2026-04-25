@@ -1,22 +1,34 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import PortfolioImage from '@/components/portfolio-image';
 import { Button } from '@/components/ui/button';
 import { onAdminSettingsChange, getServices, getPortfolio } from '@/lib/firebaseService';
-import { HeroSection, Service, Portfolio } from '@/lib/types';
-import { Zap, Leaf, Shield, ArrowRight } from 'lucide-react';
+import { HeroSection, HeroSlide, Service, Portfolio } from '@/lib/types';
+import { Zap, Leaf, Shield, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
-const defaultHero: HeroSection = {
-  title: 'Professional Electrical Solutions Powering Liberia\'s Future',
-  subtitle: 'Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.',
-  ctaText: 'Get a Free Quote',
-  ctaLink: '/contact',
-  backgroundImage: '/images/hero/electrical-engineering-hero.jpg',
-};
+const defaultHeroSlides: HeroSlide[] = [
+  {
+    id: 'default-1',
+    title: 'Professional Electrical Solutions Powering Liberia\'s Future',
+    subtitle: 'Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.',
+    ctaText: 'Get a Free Quote',
+    ctaLink: '/contact',
+    backgroundImage: '/images/hero/electrical-engineering-hero.jpg',
+    order: 0,
+  }
+];
 
 const defaultServices: Service[] = [
   {
@@ -36,45 +48,30 @@ const defaultServices: Service[] = [
   },
 ];
 
-const defaultPortfolios: Portfolio[] = [
-  {
-    title: 'Commercial Building Electrical Installation',
-    description: 'Complete electrical installation for modern commercial office complex with comprehensive power distribution systems and backup generators.',
-    category: 'Commercial',
-    client: 'Monrovia Development Corp',
-    image: '/images/portfolio/commercial-building.jpg',
-    result: 'Successfully completed on-time with zero safety incidents',
-  },
-  {
-    title: 'Residential Solar Installation',
-    description: '25kW solar panel system installation on modern residential property, providing sustainable renewable energy and significant cost savings.',
-    category: 'Solar',
-    client: 'Liberia Eco Homes',
-    image: '/images/portfolio/solar-installation.jpg',
-    result: '85% reduction in electricity costs, 20-year warranty provided',
-  },
-  {
-    title: 'Industrial Power System Upgrade',
-    description: 'Major industrial facility power upgrade with heavy-duty electrical equipment, transformers, and power distribution infrastructure.',
-    category: 'Industrial',
-    client: 'Liberia Manufacturing Ltd',
-    image: '/images/portfolio/industrial-power.jpg',
-    result: 'Increased facility capacity by 150%, improved efficiency by 30%',
-  },
-];
-
 export default function Home() {
-  const [heroData, setHeroData] = useState<HeroSection>(defaultHero);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(defaultHeroSlides);
   const [services, setServices] = useState<Service[]>(defaultServices);
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(defaultPortfolios);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
   useEffect(() => {
     // Subscribe to hero section updates
     const unsubscribe = onAdminSettingsChange((settings) => {
-      if (settings?.heroSection) {
-        setHeroData(settings.heroSection);
+      if (settings?.heroSection?.slides && settings.heroSection.slides.length > 0) {
+        setHeroSlides(settings.heroSection.slides);
+      } else if (settings?.heroSection?.title) {
+        // Fallback for legacy single hero data
+        setHeroSlides([{
+          id: 'legacy',
+          title: settings.heroSection.title,
+          subtitle: settings.heroSection.subtitle,
+          ctaText: settings.heroSection.ctaText,
+          ctaLink: settings.heroSection.ctaLink,
+          backgroundImage: settings.heroSection.backgroundImage || '',
+          order: 0
+        }]);
       }
     });
 
@@ -105,6 +102,7 @@ export default function Home() {
       try {
         const fetchedPortfolios = await getPortfolio();
         if (fetchedPortfolios.length > 0) {
+          // getPortfolio already returns them sorted by order asc
           setPortfolios(fetchedPortfolios);
         }
         setPortfolioLoading(false);
@@ -117,231 +115,339 @@ export default function Home() {
     fetchPortfolios();
   }, []);
 
+  // Auto-slide effect
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const intervalId = setInterval(() => {
+      carouselApi.scrollNext();
+    }, 6000);
+
+    return () => clearInterval(intervalId);
+  }, [carouselApi]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section
-        className="relative w-full flex items-center justify-center pt-16 min-h-[calc(100vh-4rem)]"
-        style={{
-          backgroundImage: heroData.backgroundImage
-            ? `linear-gradient(135deg, rgba(5, 150, 105, 0.75) 0%, rgba(0, 0, 0, 0.6) 100%), url(${heroData.backgroundImage})`
-            : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-        }}
-      >
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-16 sm:py-24 lg:py-32">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight text-balance drop-shadow-lg">
-            {heroData.title}
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-50 mb-6 sm:mb-8 max-w-3xl mx-auto text-pretty drop-shadow-md leading-relaxed">
-            {heroData.subtitle}
-          </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-green-600 hover:bg-gray-100 font-bold shadow-lg text-base md:text-lg px-6 md:px-8 py-2 md:py-3"
-          >
-            <Link href={heroData.ctaLink}>{heroData.ctaText}</Link>
-          </Button>
-        </div>
+      {/* Hero Carousel Section */}
+      <section className="relative w-full h-[calc(100vh-4rem)] mt-16 overflow-hidden">
+        <Carousel
+          setApi={setCarouselApi}
+          opts={{
+            loop: true,
+            duration: 40,
+          }}
+          className="w-full h-full"
+        >
+          <CarouselContent className="h-full ml-0">
+            {heroSlides.map((slide) => (
+              <CarouselItem key={slide.id} className="relative h-full pl-0">
+                <div 
+                  className="absolute inset-0 z-0 transition-transform duration-1000 scale-105"
+                  style={{
+                    backgroundImage: slide.backgroundImage
+                      ? `linear-gradient(135deg, rgba(5, 150, 105, 0.7) 0%, rgba(0, 0, 0, 0.6) 100%), url(${slide.backgroundImage})`
+                      : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                />
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-[1.1] text-balance drop-shadow-2xl">
+                        {slide.title}
+                      </h1>
+                      <p className="text-lg sm:text-xl md:text-2xl text-gray-100 mb-10 max-w-3xl mx-auto text-pretty drop-shadow-lg leading-relaxed font-medium">
+                        {slide.subtitle}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button
+                          asChild
+                          size="lg"
+                          className="bg-white text-green-700 hover:bg-green-50 font-bold shadow-2xl text-lg px-10 py-7 rounded-full transition-all hover:scale-105 active:scale-95"
+                        >
+                          <Link href={slide.ctaLink}>{slide.ctaText}</Link>
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="lg"
+                          className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold text-lg px-10 py-7 rounded-full transition-all"
+                        >
+                          <Link href="/services">Our Services</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          
+          {heroSlides.length > 1 && (
+            <>
+              <div className="hidden md:block">
+                <CarouselPrevious className="absolute left-8 top-1/2 -translate-y-1/2 h-14 w-14 border-2 border-white/30 bg-white/10 text-white hover:bg-white hover:text-green-700 transition-all rounded-full shadow-2xl" />
+                <CarouselNext className="absolute right-8 top-1/2 -translate-y-1/2 h-14 w-14 border-2 border-white/30 bg-white/10 text-white hover:bg-white hover:text-green-700 transition-all rounded-full shadow-2xl" />
+              </div>
+              
+              {/* Custom Dots */}
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+                {heroSlides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => carouselApi?.scrollTo(i)}
+                    className={`h-2 transition-all rounded-full ${
+                      carouselApi?.selectedScrollSnap() === i ? 'w-10 bg-white' : 'w-2 bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </Carousel>
       </section>
 
       {/* Services Preview */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Our Services
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-green-50 rounded-full blur-3xl opacity-50" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
+              Our Professional Services
             </h2>
-            <p className="text-gray-600 text-lg">
-              Comprehensive electrical solutions tailored to your needs
+            <p className="text-gray-600 text-xl max-w-2xl mx-auto font-medium">
+              Comprehensive electrical solutions tailored to power Liberia&apos;s growth
             </p>
           </div>
 
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Loading services...</p>
+            <div className="text-center py-12">
+              <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 font-medium tracking-wide uppercase text-xs">Loading services...</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {services.slice(0, 3).map((service) => (
+            <div className="grid md:grid-cols-3 gap-10">
+              {services.slice(0, 3).map((service, idx) => (
                 <div
-                  key={service.id}
-                  className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg hover:shadow-lg transition-shadow border border-gray-200"
+                  key={idx}
+                  className="group p-10 bg-white rounded-3xl hover:bg-green-600 transition-all duration-500 border border-gray-100 shadow-xl shadow-gray-100/50 flex flex-col h-full"
                 >
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  <div className="w-14 h-14 bg-green-50 group-hover:bg-white/20 rounded-2xl flex items-center justify-center mb-8 transition-colors">
+                    <Zap className="w-7 h-7 text-green-600 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-white mb-4 transition-colors">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 mb-4">{service.description}</p>
-                  {service.features && service.features.length > 0 && (
-                    <ul className="space-y-2 mb-4">
-                      {service.features.slice(0, 4).map((feature, idx) => (
-                        <li key={idx} className="flex items-center gap-2 text-gray-700">
-                          <Zap className="w-4 h-4 text-green-500" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <p className="text-gray-600 group-hover:text-green-50 mb-8 leading-relaxed transition-colors">
+                    {service.description}
+                  </p>
+                  <ul className="space-y-3 mt-auto">
+                    {service.features?.slice(0, 4).map((feature, fIdx) => (
+                      <li key={fIdx} className="flex items-center gap-3 text-sm font-semibold text-gray-700 group-hover:text-white transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 group-hover:bg-white" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <Button
               asChild
               variant="outline"
-              className="border-green-600 text-green-600 hover:bg-green-50"
+              className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-bold h-14 px-8 rounded-full transition-all"
             >
-              <Link href="/services" className="flex items-center gap-2">
-                View All Services <ArrowRight className="w-4 h-4" />
+              <Link href="/services" className="flex items-center gap-3">
+                Explore All Services <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Portfolio Preview */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Our Portfolio
-            </h2>
-            <p className="text-gray-600 text-lg">
-              Showcasing our completed projects and successful installations
-            </p>
+      {/* Portfolio Preview - RESPECTS ORDER */}
+      <section className="py-24 bg-gray-950 text-white relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-green-900/20 rounded-full blur-[120px]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 tracking-tight">
+                Featured Projects
+              </h2>
+              <p className="text-gray-400 text-xl font-medium">
+                Our latest and most impactful electrical installations across Liberia.
+              </p>
+            </div>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-green-400 hover:text-green-300 hover:bg-white/5 font-bold p-0 text-lg"
+            >
+              <Link href="/portfolio" className="flex items-center gap-2">
+                View Full Portfolio <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
           </div>
 
           {portfolioLoading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Loading portfolio...</p>
+            <div className="text-center py-20">
+              <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
+              {/* Shows TOP 3 based on custom order */}
               {portfolios.slice(0, 3).map((portfolio) => (
                 <div
                   key={portfolio.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
+                  className="bg-white/5 rounded-[2.5rem] overflow-hidden border border-white/10 hover:border-green-500/50 transition-all duration-500 group flex flex-col h-full"
                 >
-                {portfolio.image && (
-                  <PortfolioImage
-                    src={portfolio.image}
-                    alt={portfolio.title}
-                    containerClassName="h-48 overflow-hidden"
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{portfolio.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4">{portfolio.description}</p>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded">
+                  <div className="relative h-64 overflow-hidden">
+                    {portfolio.image && (
+                      <PortfolioImage
+                        src={portfolio.image}
+                        alt={portfolio.title}
+                        containerClassName="w-full h-full"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    )}
+                    <div className="absolute top-6 left-6">
+                      <span className="bg-green-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-xl">
                         {portfolio.category}
                       </span>
-                      {portfolio.client && (
-                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-3 py-1 rounded">
-                          {portfolio.client}
-                        </span>
-                      )}
                     </div>
-
-                    {portfolio.result && (
-                      <p className="text-green-600 text-sm font-medium">
-                        <strong>Result:</strong> {portfolio.result}
-                      </p>
-                    )}
+                  </div>
+                  <div className="p-8 flex flex-col flex-1">
+                    <h3 className="text-2xl font-bold mb-4 line-clamp-2 leading-snug group-hover:text-green-400 transition-colors">
+                      {portfolio.title}
+                    </h3>
+                    <p className="text-gray-400 mb-8 line-clamp-3 leading-relaxed">
+                      {portfolio.description}
+                    </p>
+                    <div className="mt-auto flex items-center justify-between">
+                      <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                        {portfolio.completionDate || 'Recent'}
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-green-600 transition-all duration-500">
+                        <ArrowRight className="w-5 h-5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          <div className="text-center mt-12">
-            <Button
-              asChild
-              variant="outline"
-              className="border-green-600 text-green-600 hover:bg-green-50"
-            >
-              <Link href="/portfolio" className="flex items-center gap-2">
-                View All Projects <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-16 bg-green-50">
+      <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Green Land Power
-            </h2>
-            <p className="text-gray-600 text-lg">
-              Excellence in service, dedication to sustainability
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Leaf,
-                title: 'Sustainable Solutions',
-                description:
-                  'Committed to eco-friendly electrical practices and renewable energy integration.',
-              },
-              {
-                icon: Shield,
-                title: 'Certified & Insured',
-                description:
-                  'Fully licensed professionals with comprehensive insurance coverage for peace of mind.',
-              },
-              {
-                icon: Zap,
-                title: 'Expert Team',
-                description:
-                  'Years of experience delivering high-quality electrical services across all sectors.',
-              },
-            ].map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={idx}
-                  className="p-8 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <Icon className="w-12 h-12 text-green-600 mb-4" />
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+                <Shield className="w-4 h-4" /> Why Choose Us
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 leading-[1.2] tracking-tight">
+                Reliable Power for a <span className="text-green-600">Sustainable</span> Future
+              </h2>
+              <div className="space-y-8">
+                {[
+                  {
+                    icon: Leaf,
+                    title: 'Sustainable Solutions',
+                    description: 'Committed to eco-friendly electrical practices and renewable energy integration in all our projects.',
+                  },
+                  {
+                    icon: Shield,
+                    title: 'Safety First Culture',
+                    description: 'Fully licensed professionals adhering to strict international safety standards and Liberian regulations.',
+                  },
+                  {
+                    icon: Zap,
+                    title: 'Expert Engineering',
+                    description: 'Years of deep technical expertise delivering high-quality electrical services across residential and industrial sectors.',
+                  },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={idx} className="flex gap-6 items-start">
+                      <div className="w-14 h-14 rounded-2xl bg-green-600 flex items-center justify-center shrink-0 shadow-lg shadow-green-200">
+                        <Icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                        <p className="text-gray-600 leading-relaxed font-medium">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="relative">
+              <div className="aspect-square rounded-3xl bg-gray-100 overflow-hidden shadow-2xl relative">
+                <img 
+                  src="/images/about/team-work.jpg" 
+                  alt="Team working" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&q=80";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-green-900/60 to-transparent" />
+                <div className="absolute bottom-8 left-8 right-8">
+                  <div className="p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-white">
+                    <p className="text-2xl font-bold mb-1">15+ Years</p>
+                    <p className="text-sm font-medium opacity-80 uppercase tracking-widest">Experience in Liberia</p>
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-600 rounded-full flex flex-col items-center justify-center text-white shadow-2xl animate-pulse">
+                <p className="text-3xl font-black">24/7</p>
+                <p className="text-[10px] font-bold uppercase tracking-tighter">Emergency Support</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-green-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Ready to Get Started?
+      <section className="py-24 bg-green-600 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10">
+          <div className="absolute top-1/2 left-1/4 w-96 h-96 border-4 border-white rounded-full" />
+          <div className="absolute top-0 right-1/4 w-64 h-64 border-4 border-white rounded-full" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl sm:text-6xl font-extrabold text-white mb-8 tracking-tight">
+            Ready to Power Your Next Project?
           </h2>
-          <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
-            Contact us today for a free consultation and let&apos;s discuss your electrical needs.
+          <p className="text-green-50 text-xl mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+            Partner with Liberia&apos;s leading electrical engineering firm. Request your free professional consultation today.
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-green-600 hover:bg-gray-100 font-bold"
-          >
-            <Link href="/contact">Request a Quote</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-green-700 hover:bg-gray-100 font-bold h-16 px-12 text-xl rounded-full shadow-2xl transition-all"
+            >
+              <Link href="/contact">Request a Free Quote</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold h-16 px-12 text-xl rounded-full transition-all"
+            >
+              <a href="tel:+231777123456" className="flex items-center gap-3">
+                Call Us Now
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 

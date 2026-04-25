@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   getTeamMembers,
   addTeamMember,
   updateTeamMember,
@@ -15,26 +22,30 @@ import {
   onTeamMembersChange,
   uploadImage,
 } from '@/lib/firebaseService';
+import { uploadPortfolioImageToBlob } from '@/lib/blobService';
 import { TeamMember } from '@/lib/types';
 import { toast } from 'sonner';
-import { Trash2, Globe, Eye } from 'lucide-react';
+import { Trash2, Plus, Globe, Pencil, User, Mail, Cloud, Camera } from 'lucide-react';
 
 const teamSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  position: z.string().min(2, 'Position is required'),
-  bio: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  name: z.string().min(3, 'Name is required'),
+  position: z.string().min(3, 'Position is required'),
+  bio: z.string().min(10, 'Bio is required'),
+  email: z.string().email('Valid email is required'),
 });
 
 type TeamFormData = z.infer<typeof teamSchema>;
 
 export default function AdminTeamEditor() {
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [lastPublished, setLastPublished] = useState<Date | null>(null);
+  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob'>('blob');
+
   const {
     register,
     handleSubmit,
@@ -45,8 +56,8 @@ export default function AdminTeamEditor() {
   });
 
   useEffect(() => {
-    const unsubscribe = onTeamMembersChange((updatedMembers) => {
-      setMembers(updatedMembers);
+    const unsubscribe = onTeamMembersChange((updatedTeam) => {
+      setTeam(updatedTeam);
       setIsLoading(false);
     });
 
@@ -57,257 +68,277 @@ export default function AdminTeamEditor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploadingImage(true);
     try {
-      const url = await uploadImage(file, `team/${Date.now()}`);
+      let url: string;
+      if (uploadMethod === 'blob') {
+        const blobResult = await uploadPortfolioImageToBlob(file);
+        url = blobResult.url;
+      } else {
+        url = await uploadImage(file, `team/${Date.now()}`);
+      }
       setSelectedImage(url);
-      toast.success('Image uploaded successfully');
-    } catch (error) {
+      toast.success('Profile picture uploaded!');
+    } catch (error: any) {
       toast.error('Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
   const onSubmit = async (data: TeamFormData) => {
+    if (!selectedImage && !editingId) {
+      toast.error('Please upload a profile picture');
+      return;
+    }
+
     setIsSaving(true);
     try {
+      const existingImage = editingId ? team.find((t) => t.id === editingId)?.image : '';
       const memberData = {
         ...data,
-        image: selectedImage || (editingId ? members.find((m) => m.id === editingId)?.image : undefined),
+        image: selectedImage || existingImage || '',
       };
 
       if (editingId) {
         await updateTeamMember(editingId, memberData);
-        toast.success('Team member updated and published! Changes are live on the team page.');
+        toast.success('Team member updated!');
       } else {
         await addTeamMember(memberData);
-        toast.success('Team member added and published! Visible on the team page.');
+        toast.success('Team member added!');
       }
 
-      setLastPublished(new Date());
+      setIsModalOpen(false);
       reset();
       setSelectedImage(null);
       setEditingId(null);
     } catch (error) {
-      toast.error('Failed to publish team member');
+      toast.error('Failed to save team member');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleAdd = () => {
+    setEditingId(null);
+    setSelectedImage(null);
+    reset({
+      name: '',
+      position: '',
+      bio: '',
+      email: '',
+    });
+    setIsModalOpen(true);
+  };
+
   const handleEdit = (member: TeamMember) => {
     setEditingId(member.id!);
-    setSelectedImage(member.image || null);
+    setSelectedImage(member.image);
     reset({
       name: member.name,
       position: member.position,
       bio: member.bio,
       email: member.email,
     });
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this team member?')) {
       try {
         await deleteTeamMember(id);
-        toast.success('Team member deleted successfully!');
+        toast.success('Team member removed');
       } catch (error) {
         toast.error('Failed to delete team member');
       }
     }
   };
 
-  const handleCancel = () => {
-    reset();
-    setSelectedImage(null);
-    setEditingId(null);
-  };
-
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8 text-gray-500">Loading team...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Form */}
-      <div className="bg-white rounded-lg shadow p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          {editingId ? 'Edit Team Member' : 'Add New Team Member'}
-        </h2>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">
-              Profile Image
-            </label>
-            {selectedImage && (
-              <div className="mb-4">
-                <img
-                  src={selectedImage}
-                  alt="Team member"
-                  className="w-32 h-32 object-cover rounded-lg"
-                />
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-1">
-              Full Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              {...register('name')}
-              className="w-full"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="position" className="block text-sm font-medium text-gray-900 mb-1">
-              Position
-            </label>
-            <Input
-              id="position"
-              type="text"
-              placeholder="e.g., Senior Electrician"
-              {...register('position')}
-              className="w-full"
-            />
-            {errors.position && (
-              <p className="text-red-500 text-sm mt-1">{errors.position.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="bio" className="block text-sm font-medium text-gray-900 mb-1">
-              Bio (Optional)
-            </label>
-            <Textarea
-              id="bio"
-              placeholder="Brief bio..."
-              {...register('bio')}
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-1">
-              Email (Optional)
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="john@greenlandpower.com"
-              {...register('email')}
-              className="w-full"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold flex items-center justify-center gap-2"
-            >
-              <Globe className="w-4 h-4" />
-              {isSaving ? 'Publishing...' : editingId ? 'Update & Publish' : 'Add & Publish'}
-            </Button>
-            {editingId && (
-              <Button
-                type="button"
-                onClick={handleCancel}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </form>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Team Management</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Introduce the professionals behind Green Land Power
+          </p>
+        </div>
+        <Button
+          onClick={handleAdd}
+          className="bg-green-600 hover:bg-green-700 text-white font-bold flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Team Member
+        </Button>
       </div>
 
-      {/* Team Members List */}
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Team Members</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {members.length} team member{members.length !== 1 ? 's' : ''} live on the team page
-            </p>
+      {/* Team Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {team.length === 0 ? (
+          <div className="col-span-full bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+            <h3 className="text-lg font-medium text-gray-900">No team members yet</h3>
+            <p className="text-gray-500 mt-1 mb-6">Start building your company profile</p>
+            <Button onClick={handleAdd} variant="outline" className="border-green-600 text-green-600">
+              Add First Member
+            </Button>
           </div>
-          <a
-            href="/team"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            View Team Page
-          </a>
-        </div>
-
-        {members.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No team members yet</p>
         ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {members.map((member) => (
-              <div key={member.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex gap-4">
-                  {member.image && (
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900">{member.name}</h3>
-                    <p className="text-gray-600 text-sm">{member.position}</p>
-                    {member.bio && <p className="text-gray-600 text-xs mt-1">{member.bio}</p>}
-                    {member.email && (
-                      <a
-                        href={`mailto:${member.email}`}
-                        className="text-green-600 text-xs hover:underline"
-                      >
-                        {member.email}
-                      </a>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button
+          team.map((member) => (
+            <div
+              key={member.id}
+              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group"
+            >
+              <div className="relative h-40 bg-gradient-to-br from-green-500 to-green-700 p-6 flex justify-center">
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
                     onClick={() => handleEdit(member)}
-                    variant="outline"
-                    size="sm"
+                    className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur rounded-md text-white transition-colors"
                   >
-                    Edit
-                  </Button>
-                  <Button
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleDelete(member.id!)}
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
+                    className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur rounded-md text-white transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </Button>
+                  </button>
+                </div>
+                <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-gray-100 mt-8 shadow-lg">
+                  {member.image ? (
+                    <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-12 h-12 text-gray-300" />
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="p-6 pt-12 text-center">
+                <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
+                <p className="text-green-600 text-xs font-bold uppercase tracking-wider mb-3">
+                  {member.position}
+                </p>
+                <div className="flex items-center justify-center gap-2 text-gray-400 text-xs mb-4">
+                  <Mail className="w-3 h-3" />
+                  {member.email}
+                </div>
+                <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem]">
+                  {member.bio}
+                </p>
+                <Button
+                  onClick={() => handleEdit(member)}
+                  variant="ghost"
+                  className="w-full mt-4 text-green-600 hover:text-green-700 hover:bg-green-50 font-bold"
+                >
+                  Edit Profile
+                </Button>
+              </div>
+            </div>
+          ))
         )}
       </div>
+
+      {/* Edit/Add Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {editingId ? 'Edit Team Member' : 'Add Team Member'}
+            </DialogTitle>
+            <DialogDescription>
+              Enter the professional details and upload a profile picture.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+            {/* Profile Picture Upload */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative group w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                {selectedImage ? (
+                  <>
+                    <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                      <Camera className="w-6 h-6 text-white" />
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    </label>
+                  </>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+                    <User className="w-8 h-8 text-gray-300 mb-1" />
+                    <span className="text-[10px] text-gray-500 font-bold uppercase">Upload Photo</span>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  </label>
+                )}
+                {isUploadingImage && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 p-1 bg-gray-100 rounded-md">
+                <button
+                  type="button"
+                  onClick={() => setUploadMethod('blob')}
+                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
+                    uploadMethod === 'blob' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'
+                  }`}
+                >
+                  BLOB
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUploadMethod('firebase')}
+                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
+                    uploadMethod === 'firebase' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500'
+                  }`}
+                >
+                  FIREBASE
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Full Name</label>
+                <Input {...register('name')} placeholder="e.g., James Wilson" className="bg-gray-50" />
+                {errors.name && <p className="text-red-500 text-[10px]">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Position</label>
+                <Input {...register('position')} placeholder="e.g., Chief Engineer" className="bg-gray-50" />
+                {errors.position && <p className="text-red-500 text-[10px]">{errors.position.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Email Address</label>
+                <Input {...register('email')} placeholder="email@greenlandpower.com" className="bg-gray-50" />
+                {errors.email && <p className="text-red-500 text-[10px]">{errors.email.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Professional Bio</label>
+                <Textarea {...register('bio')} rows={3} placeholder="Write a short professional summary..." className="bg-gray-50 resize-none" />
+                {errors.bio && <p className="text-red-500 text-[10px]">{errors.bio.message}</p>}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving} className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-bold">
+                {isSaving ? 'Saving...' : editingId ? 'Update Member' : 'Add Member'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

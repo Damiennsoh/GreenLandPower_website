@@ -1,3 +1,13 @@
+export interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle: string;
+  ctaText: string;
+  ctaLink: string;
+  backgroundImage: string;
+  order: number;
+}
+
 export interface HeroSection {
   id?: string;
   title: string;
@@ -5,6 +15,7 @@ export interface HeroSection {
   ctaText: string;
   ctaLink: string;
   backgroundImage?: string;
+  slides?: HeroSlide[];
 }
 
 export interface FooterContent {
@@ -43,6 +54,7 @@ export interface Portfolio {
   completionDate?: string;
   client?: string;
   result?: string;
+  order?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

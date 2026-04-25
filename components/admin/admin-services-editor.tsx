@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   getServices,
   addService,
   updateService,
@@ -16,7 +23,7 @@ import {
 } from '@/lib/firebaseService';
 import { Service } from '@/lib/types';
 import { toast } from 'sonner';
-import { Trash2, Plus, Globe, Eye, CheckCircle } from 'lucide-react';
+import { Trash2, Plus, Globe, Eye, Pencil, Zap } from 'lucide-react';
 
 const serviceSchema = z.object({
   title: z.string().min(3, 'Title is required'),
@@ -29,9 +36,10 @@ type ServiceFormData = z.infer<typeof serviceSchema>;
 export default function AdminServicesEditor() {
   const [services, setServices] = useState<Service[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastPublished, setLastPublished] = useState<Date | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -61,20 +69,30 @@ export default function AdminServicesEditor() {
 
       if (editingId) {
         await updateService(editingId, serviceData);
-        toast.success('Service updated and published! Changes are live on the services page.');
+        toast.success('Service updated successfully!');
       } else {
         await addService(serviceData);
-        toast.success('Service added and published! Visible on the services page.');
+        toast.success('Service added successfully!');
       }
 
-      setLastPublished(new Date());
+      setIsModalOpen(false);
       reset();
       setEditingId(null);
     } catch (error) {
-      toast.error('Failed to publish service');
+      toast.error('Failed to save service');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAdd = () => {
+    setEditingId(null);
+    reset({
+      title: '',
+      description: '',
+      features: '',
+    });
+    setIsModalOpen(true);
   };
 
   const handleEdit = (service: Service) => {
@@ -84,6 +102,7 @@ export default function AdminServicesEditor() {
       description: service.description,
       features: service.features?.join('\n') || '',
     });
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -97,99 +116,28 @@ export default function AdminServicesEditor() {
     }
   };
 
-  const handleCancel = () => {
-    reset();
-    setEditingId(null);
-  };
-
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8 text-gray-500">Loading services...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Form */}
-      <div className="bg-white rounded-lg shadow p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          {editingId ? 'Edit Service' : 'Add New Service'}
-        </h2>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-900 mb-1">
-              Service Title
-            </label>
-            <Input
-              id="title"
-              type="text"
-              placeholder="e.g., Residential Electrical"
-              {...register('title')}
-              className="w-full"
-            />
-            {errors.title && (
-              <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-1">
-              Description
-            </label>
-            <Textarea
-              id="description"
-              placeholder="Describe the service..."
-              {...register('description')}
-              className="w-full"
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="features" className="block text-sm font-medium text-gray-900 mb-1">
-              Features (one per line)
-            </label>
-            <Textarea
-              id="features"
-              placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
-              {...register('features')}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold flex items-center justify-center gap-2"
-            >
-              <Globe className="w-4 h-4" />
-              {isSaving ? 'Publishing...' : editingId ? 'Update & Publish' : 'Add & Publish'}
-            </Button>
-            {editingId && (
-              <Button
-                type="button"
-                onClick={handleCancel}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* Services List */}
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">All Services</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {services.length} service{services.length !== 1 ? 's' : ''} live on the website
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Services Management</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Define and describe the electrical solutions you offer
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={handleAdd}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Service
+          </Button>
           <a
             href="/services"
             target="_blank"
@@ -197,56 +145,148 @@ export default function AdminServicesEditor() {
             className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
           >
             <Eye className="w-4 h-4" />
-            View Services Page
+            View Live
           </a>
         </div>
+      </div>
 
+      {/* Services List */}
+      <div className="grid grid-cols-1 gap-4">
         {services.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No services yet</p>
-        ) : (
-          <div className="space-y-4">
-            {services.map((service) => (
-              <div key={service.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900">{service.title}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{service.description}</p>
-                    {service.features && service.features.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {service.features.map((feature, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      onClick={() => handleEdit(service)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(service.id!)}
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+            <h3 className="text-lg font-medium text-gray-900">No services listed</h3>
+            <p className="text-gray-500 mt-1 mb-6">Create your first service to show on the website</p>
+            <Button onClick={handleAdd} variant="outline" className="border-green-600 text-green-600">
+              Add First Service
+            </Button>
           </div>
+        ) : (
+          services.map((service) => (
+            <div
+              key={service.id}
+              className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 group"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">{service.title}</h3>
+                </div>
+                <p className="text-gray-600 text-sm mb-4 max-w-2xl">{service.description}</p>
+                {service.features && service.features.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {service.features.map((feature, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-gray-100 text-gray-700 text-[11px] px-2.5 py-1 rounded-full font-medium"
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
+                <Button
+                  onClick={() => handleEdit(service)}
+                  variant="outline"
+                  className="flex-1 md:flex-none border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Service
+                </Button>
+                <Button
+                  onClick={() => handleDelete(service.id!)}
+                  variant="outline"
+                  size="icon"
+                  className="border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))
         )}
       </div>
+
+      {/* Edit/Add Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {editingId ? 'Edit Service Offering' : 'Add New Service Offering'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingId 
+                ? 'Update the details and features of this service.' 
+                : 'Define a new electrical solution to display on your services page.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                Service Title
+              </label>
+              <Input
+                id="title"
+                placeholder="e.g., Residential Electrical Installation"
+                {...register('title')}
+                className="bg-gray-50 h-12 text-lg focus:bg-white"
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="description" className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                Service Description
+              </label>
+              <Textarea
+                id="description"
+                rows={5}
+                placeholder="Provide a detailed description of what this service involves..."
+                {...register('description')}
+                className="bg-gray-50 focus:bg-white resize-none"
+              />
+              {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="features" className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                Key Features (one per line)
+              </label>
+              <Textarea
+                id="features"
+                rows={4}
+                placeholder="New Construction Wiring&#10;Panel Upgrades&#10;Lighting Design"
+                {...register('features')}
+                className="bg-gray-50 focus:bg-white font-mono text-sm"
+              />
+              <p className="text-[11px] text-gray-400">These will appear as bullet points on the website.</p>
+            </div>
+
+            <div className="flex gap-3 pt-6 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 h-12"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg shadow-green-100"
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                {isSaving ? 'Publishing...' : editingId ? 'Update & Publish' : 'Add & Publish'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

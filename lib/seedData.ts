@@ -3,7 +3,13 @@ import {
   addPortfolio, 
   addTeamMember,
   updateHeroSection,
-  updateFooterContent
+  updateFooterContent,
+  getServices,
+  getPortfolio,
+  getTeamMembers,
+  deleteService,
+  deletePortfolio,
+  deleteTeamMember
 } from './firebaseService';
 import { HeroSection, FooterContent, Service, Portfolio, TeamMember } from './types';
 
@@ -48,6 +54,12 @@ export const seedServices = async () => {
   ];
 
   try {
+    // Delete existing services first
+    const existingServices = await getServices(false);
+    for (const service of existingServices) {
+      if (service.id) await deleteService(service.id);
+    }
+
     for (const service of services) {
       await addService(service);
     }
@@ -117,6 +129,12 @@ export const seedPortfolios = async () => {
   ];
 
   try {
+    // Delete existing portfolios first
+    const existingPortfolios = await getPortfolio(false);
+    for (const portfolio of existingPortfolios) {
+      if (portfolio.id) await deletePortfolio(portfolio.id);
+    }
+
     for (const portfolio of portfolios) {
       await addPortfolio(portfolio);
     }
@@ -174,6 +192,12 @@ export const seedTeamMembers = async () => {
   ];
 
   try {
+    // Delete existing team members first
+    const existingTeam = await getTeamMembers(false);
+    for (const member of existingTeam) {
+      if (member.id) await deleteTeamMember(member.id);
+    }
+
     for (const member of teamMembers) {
       await addTeamMember(member);
     }
@@ -184,7 +208,7 @@ export const seedTeamMembers = async () => {
   }
 };
 
-export const seedHeroSection = async () => {
+export const seedStaticContent = async () => {
   const heroData: HeroSection = {
     title: 'Professional Electrical Solutions Powering Liberia\'s Future',
     subtitle: 'Expert electrical engineering services for residential, commercial, and industrial sectors. Solar power systems, generator installations, and sustainable energy solutions.',
@@ -193,11 +217,29 @@ export const seedHeroSection = async () => {
     backgroundImage: '/images/hero/electrical-engineering-hero.jpg',
   };
 
+  const footerData: FooterContent = {
+    companyName: 'Green Land Power Inc.',
+    description: 'Leading provider of sustainable electrical solutions for Liberia and West Africa. We deliver excellence in every project, ensuring safe and reliable power for our community.',
+    address: 'Broad Street, Monrovia, Liberia | Tubman Boulevard, Sinkor, Monrovia',
+    phone: '+231 (777) 123-456',
+    email: 'info@greenlandpower.com.lr',
+    socialLinks: {
+      facebook: 'https://facebook.com/greenlandpowerliberia',
+      twitter: 'https://twitter.com/greenlandpowerlr',
+      linkedin: 'https://linkedin.com/company/greenlandpower-liberia',
+      instagram: 'https://instagram.com/greenlandpowerliberia',
+    },
+    copyrightText: '© 2026 Green Land Power Inc. Monrovia, Liberia. All rights reserved.',
+  };
+
   try {
-    await updateHeroSection(heroData);
-    return { success: true, message: 'Hero section updated successfully' };
+    await Promise.all([
+      updateHeroSection(heroData),
+      updateFooterContent(footerData)
+    ]);
+    return { success: true, message: 'Static content (Hero & Footer) updated successfully' };
   } catch (error: any) {
-    console.error('Error updating hero section:', error);
+    console.error('Error updating static content:', error);
     return { success: false, error: error.message };
   }
 };
@@ -208,7 +250,7 @@ export const seedAllData = async () => {
       seedServices(),
       seedPortfolios(),
       seedTeamMembers(),
-      seedHeroSection(),
+      seedStaticContent(),
     ]);
 
     const summary = {
