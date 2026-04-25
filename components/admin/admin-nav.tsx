@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'hero' | 'footer' | 'services' | 'portfolio' | 'team' | 'submissions';
+type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'submissions' | 'users';
 
 interface AdminNavProps {
   activeTab: Tab;
@@ -25,10 +25,12 @@ const navItems = [
   { id: 'overview' as Tab, label: 'Dashboard', icon: LayoutDashboard },
   { id: 'hero' as Tab, label: 'Hero Section', icon: Zap },
   { id: 'footer' as Tab, label: 'Footer Content', icon: FileText },
+  { id: 'contact' as Tab, label: 'Contact Info', icon: Mail },
   { id: 'services' as Tab, label: 'Services', icon: Briefcase },
   { id: 'portfolio' as Tab, label: 'Portfolio', icon: Images },
   { id: 'team' as Tab, label: 'Team Members', icon: Users },
   { id: 'submissions' as Tab, label: 'Submissions', icon: Mail },
+  { id: 'users' as Tab, label: 'Users', icon: Users },
 ];
 
 export default function AdminNav({ activeTab, onTabChange }: AdminNavProps) {

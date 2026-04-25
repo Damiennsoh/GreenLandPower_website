@@ -4,6 +4,7 @@ import {
   addTeamMember,
   updateHeroSection,
   updateFooterContent,
+  updateContactInfo,
   getServices,
   getPortfolio,
   getTeamMembers,
@@ -228,16 +229,27 @@ export const seedStaticContent = async () => {
       twitter: 'https://twitter.com/greenlandpowerlr',
       linkedin: 'https://linkedin.com/company/greenlandpower-liberia',
       instagram: 'https://instagram.com/greenlandpowerliberia',
+      whatsapp: 'https://wa.me/231777123456',
     },
     copyrightText: '© 2026 Green Land Power Inc. Monrovia, Liberia. All rights reserved.',
+  };
+
+  const contactData = {
+    address: 'Broad Street, Monrovia, Liberia | Tubman Boulevard, Sinkor, Monrovia',
+    phone: '+231 (777) 123-456',
+    whatsapp: '+231 777 123 456',
+    email: 'info@greenlandpower.com.lr',
+    workingHours: 'Mon - Fri: 8:00 AM - 6:00 PM, Sat: 9:00 AM - 2:00 PM',
+    mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127111.45892543944!2d-10.8222629393046!3d6.29177114620023!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTcnMzAuNCJOIDEwwrA0NycxMi44Ilc!5e0!3m2!1sen!2slr!4v1714000000000!5m2!1sen!2slr',
   };
 
   try {
     await Promise.all([
       updateHeroSection(heroData),
-      updateFooterContent(footerData)
+      updateFooterContent(footerData),
+      updateContactInfo(contactData)
     ]);
-    return { success: true, message: 'Static content (Hero & Footer) updated successfully' };
+    return { success: true, message: 'Static content (Hero, Footer & Contact) updated successfully' };
   } catch (error: any) {
     console.error('Error updating static content:', error);
     return { success: false, error: error.message };

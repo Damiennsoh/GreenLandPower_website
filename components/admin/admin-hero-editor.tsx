@@ -11,7 +11,7 @@ import { getAdminSettings, updateHeroSection, uploadImage } from '@/lib/firebase
 import { uploadPortfolioImageToBlob } from '@/lib/blobService';
 import { HeroSection, HeroSlide } from '@/lib/types';
 import { toast } from 'sonner';
-import { Globe, Eye, Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, CheckCircle, Pencil, Cloud, Link as LinkIcon, X } from 'lucide-react';
+import { Globe, Eye, Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, CheckCircle, Pencil, Cloud, Link as LinkIcon, X, Save, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ const slideSchema = z.object({
   title: z.string().min(5, 'Title is required'),
   subtitle: z.string().min(5, 'Subtitle is required'),
   ctaText: z.string().min(3, 'CTA text is required'),
-  ctaLink: z.string().url('Valid URL required'),
+  ctaLink: z.string().min(1, 'Link is required'),
 });
 
 type SlideFormData = z.infer<typeof slideSchema>;
@@ -37,8 +37,9 @@ export default function AdminHeroEditor() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob' | 'manual'>('blob');
+  const [uploadMethod, setUploadMethod] = useState<'blob' | 'firebase' | 'manual'>('blob');
   const [manualUrl, setManualUrl] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const {
     register,
@@ -92,7 +93,7 @@ export default function AdminHeroEditor() {
       }
       setSelectedImage(url);
       setManualUrl(url);
-      toast.success('Image uploaded successfully');
+      toast.success('Image successfully uploaded and attached!');
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload image');
@@ -104,13 +105,15 @@ export default function AdminHeroEditor() {
   const handleManualUrlSubmit = () => {
     if (manualUrl.trim()) {
       setSelectedImage(manualUrl.trim());
-      toast.success('Image path updated');
+      toast.success('Local/External image attached successfully');
+    } else {
+      toast.error('Please enter a valid URL or path');
     }
   };
 
   const onSlideSubmit = (data: SlideFormData) => {
     if (!selectedImage && editingIndex === null) {
-      toast.error('Please provide a background image');
+      toast.error('Please attach a background image before adding the slide');
       return;
     }
 
@@ -129,11 +132,13 @@ export default function AdminHeroEditor() {
     }
 
     setSlides(updatedSlides);
+    setHasUnsavedChanges(true);
     setIsModalOpen(false);
     reset();
     setSelectedImage(null);
     setManualUrl('');
     setEditingIndex(null);
+    toast.success('Slide added to list. Remember to click "Publish Carousel" to save changes live.');
   };
 
   const handleAddSlide = () => {
@@ -167,6 +172,7 @@ export default function AdminHeroEditor() {
     if (confirm('Are you sure you want to delete this slide?')) {
       const updatedSlides = slides.filter((_, i) => i !== index);
       setSlides(updatedSlides);
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -179,6 +185,7 @@ export default function AdminHeroEditor() {
         slide.order = i;
       });
       setSlides(newSlides);
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -198,7 +205,8 @@ export default function AdminHeroEditor() {
         backgroundImage: slides[0].backgroundImage,
         slides: slides,
       });
-      toast.success('Hero carousel published successfully!');
+      setHasUnsavedChanges(false);
+      toast.success('Hero carousel published successfully! Changes are now live.');
     } catch (error) {
       toast.error('Failed to publish hero section');
     } finally {
@@ -207,23 +215,32 @@ export default function AdminHeroEditor() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading hero settings...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">Loading hero settings...</p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+        {hasUnsavedChanges && (
+          <div className="absolute top-0 left-0 w-full h-1 bg-amber-400 animate-pulse" />
+        )}
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Hero Carousel Editor</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Manage multiple slides for your homepage hero section
+            Build a stunning, multi-slide introduction for your visitors
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             onClick={handleAddSlide}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-2"
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50 font-bold flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add New Slide
@@ -231,20 +248,39 @@ export default function AdminHeroEditor() {
           <Button
             onClick={publishHero}
             disabled={isSaving}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold flex items-center gap-2 shadow-lg shadow-green-100"
+            className={`${
+              hasUnsavedChanges 
+                ? 'bg-blue-600 hover:bg-blue-700 animate-shimmer ring-2 ring-blue-100' 
+                : 'bg-green-600 hover:bg-green-700'
+            } text-white font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95`}
           >
-            <Globe className="w-4 h-4" />
-            {isSaving ? 'Publishing...' : 'Publish Carousel'}
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSaving ? 'Saving...' : 'Publish Live Changes'}
           </Button>
         </div>
       </div>
 
+      {hasUnsavedChanges && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 text-amber-800 text-sm font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          You have unsaved changes. Click "Publish Live Changes" to update the website.
+        </div>
+      )}
+
       {/* Slides List */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {slides.length === 0 ? (
-          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-500 mb-4">No slides created yet.</p>
-            <Button onClick={handleAddSlide} variant="outline" className="border-blue-600 text-blue-600">
+          <div className="col-span-full bg-white rounded-xl border-2 border-dashed border-gray-200 p-12 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <ImageIcon className="w-8 h-8 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">No slides created</h3>
+            <p className="text-gray-500 mb-6 max-w-xs mx-auto">Create your first hero slide to start building your homepage carousel.</p>
+            <Button onClick={handleAddSlide} className="bg-blue-600 hover:bg-blue-700 font-bold">
               Create First Slide
             </Button>
           </div>
@@ -252,9 +288,9 @@ export default function AdminHeroEditor() {
           slides.map((slide, index) => (
             <div
               key={slide.id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col md:flex-row"
+              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row group"
             >
-              <div className="w-full md:w-48 h-32 md:h-auto bg-gray-100 relative">
+              <div className="w-full sm:w-40 h-32 sm:h-auto bg-gray-100 relative shrink-0">
                 {slide.backgroundImage ? (
                   <img src={slide.backgroundImage} alt={slide.title} className="w-full h-full object-cover" />
                 ) : (
@@ -262,61 +298,62 @@ export default function AdminHeroEditor() {
                     <ImageIcon className="w-8 h-8 text-gray-300" />
                   </div>
                 )}
-                <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded font-bold">
-                  SLIDE {index + 1}
+                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                  Slide {index + 1}
                 </div>
               </div>
               
-              <div className="flex-1 p-5">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg line-clamp-1">{slide.title}</h3>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={index === 0}
-                      onClick={() => moveSlide(index, 'up')}
-                      className="h-8 w-8 text-gray-400 hover:text-blue-600"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={index === slides.length - 1}
-                      onClick={() => moveSlide(index, 'down')}
-                      className="h-8 w-8 text-gray-400 hover:text-blue-600"
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </Button>
+              <div className="flex-1 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-bold text-gray-900 line-clamp-1">{slide.title}</h3>
+                    <div className="flex gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === 0}
+                        onClick={() => moveSlide(index, 'up')}
+                        className="h-7 w-7 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === slides.length - 1}
+                        onClick={() => moveSlide(index, 'down')}
+                        className="h-7 w-7 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
+                  <p className="text-gray-500 text-xs line-clamp-2">{slide.subtitle}</p>
                 </div>
-                <p className="text-gray-500 text-sm line-clamp-2 mb-4">{slide.subtitle}</p>
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                  <div className="flex gap-4 text-[11px] font-medium text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                      {slide.ctaText}
-                    </span>
-                  </div>
+
+                <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-50">
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleEditSlide(index)}
-                      className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="h-8 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2"
                     >
-                      <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                      <Pencil className="w-3 h-3 mr-1" />
                       Edit
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteSlide(index)}
-                      className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-8 text-[11px] font-bold text-red-600 hover:bg-red-50 px-2"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Delete
                     </Button>
+                  </div>
+                  <div className="bg-green-50 text-green-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-green-100 uppercase">
+                    {slide.ctaText}
                   </div>
                 </div>
               </div>
@@ -327,137 +364,180 @@ export default function AdminHeroEditor() {
 
       {/* Slide Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingIndex !== null ? 'Edit Hero Slide' : 'Add New Hero Slide'}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2 shrink-0">
+            <DialogTitle className="text-2xl font-bold">
+              {editingIndex !== null ? 'Modify Slide Content' : 'Add New Carousel Slide'}
+            </DialogTitle>
             <DialogDescription>
-              Provide an image and content for this slide. You can upload a file or reference an image from the public directory.
+              Select an image source and fill in the headline details.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {/* Image Source Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-gray-900 uppercase tracking-wider">Background Image Source</label>
-              <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+            {/* Image Selection Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-[2px]">
+                  Background Image Source
+                </label>
+                {selectedImage ? (
+                  <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase bg-green-50 px-2 py-0.5 rounded border border-green-200">
+                    <CheckCircle className="w-3 h-3" />
+                    Image Attached
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-red-500 text-[10px] font-bold uppercase bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                    <X className="w-3 h-3" />
+                    No Image Selected
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 p-1 bg-gray-50 rounded-xl w-fit border border-gray-100">
                 <button
                   type="button"
                   onClick={() => setUploadMethod('blob')}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    uploadMethod === 'blob' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                    uploadMethod === 'blob' ? 'bg-white shadow-sm text-blue-600 border border-gray-200' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <Cloud className="w-3 h-3" />
+                  <Cloud className="w-3.5 h-3.5" />
                   Vercel Blob
                 </button>
                 <button
                   type="button"
                   onClick={() => setUploadMethod('firebase')}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    uploadMethod === 'firebase' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-500'
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                    uploadMethod === 'firebase' ? 'bg-white shadow-sm text-orange-600 border border-gray-200' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <Globe className="w-3 h-3" />
+                  <Globe className="w-3.5 h-3.5" />
                   Firebase
                 </button>
                 <button
                   type="button"
                   onClick={() => setUploadMethod('manual')}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    uploadMethod === 'manual' ? 'bg-white shadow-sm text-green-600' : 'text-gray-500'
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                    uploadMethod === 'manual' ? 'bg-white shadow-sm text-emerald-600 border border-gray-200' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <LinkIcon className="w-3 h-3" />
-                  URL / Public
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  Public/URL
                 </button>
               </div>
 
               {uploadMethod !== 'manual' ? (
-                <div className="relative aspect-[21/9] bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden group">
+                <div className={`relative aspect-[21/9] rounded-2xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center ${
+                  selectedImage ? 'border-green-400 bg-green-50/20' : 'border-gray-200 bg-gray-50 hover:border-blue-300'
+                }`}>
                   {selectedImage ? (
                     <>
-                      <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
-                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                        <span className="bg-white px-4 py-2 rounded-lg font-bold text-sm shadow-xl">Change File</span>
-                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                      </label>
-                      <button 
-                        onClick={() => setSelectedImage(null)}
-                        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <img src={selectedImage} alt="Slide Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <label className="cursor-pointer bg-white text-gray-900 px-4 py-2 rounded-xl font-bold text-sm shadow-xl hover:scale-105 transition-transform">
+                          Change File
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                        </label>
+                        <button 
+                          onClick={() => setSelectedImage(null)}
+                          className="bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl hover:scale-105 transition-transform"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-100 transition-colors">
-                      <ImageIcon className="w-10 h-10 text-gray-300 mb-2" />
-                      <span className="text-sm font-bold text-gray-900">Click to upload via {uploadMethod}</span>
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-6">
+                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">Select Image to Upload</span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-wider">Method: {uploadMethod}</span>
                       <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </label>
                   )}
                   {isUploadingImage && (
-                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+                      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                      <span className="text-sm font-bold text-blue-700 animate-pulse">Uploading to {uploadMethod}...</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3 bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100">
                   <div className="flex gap-2">
                     <Input 
                       value={manualUrl} 
                       onChange={(e) => setManualUrl(e.target.value)}
-                      placeholder="e.g., /images/hero/sample.jpg or https://..."
-                      className="bg-gray-50"
+                      placeholder="e.g., /images/hero/sample.jpg"
+                      className="bg-white border-emerald-100 h-11"
                     />
-                    <Button type="button" onClick={handleManualUrlSubmit} className="bg-green-600 hover:bg-green-700">Apply</Button>
+                    <Button 
+                      type="button" 
+                      onClick={handleManualUrlSubmit} 
+                      className="bg-emerald-600 hover:bg-emerald-700 font-bold h-11 px-6 shadow-md shadow-emerald-100"
+                    >
+                      Attach
+                    </Button>
                   </div>
-                  <p className="text-[10px] text-gray-500">
-                    Use <code className="bg-gray-100 px-1 rounded">/images/hero/...</code> to reference files in your <code className="bg-gray-100 px-1 rounded">public</code> folder.
-                  </p>
-                  {selectedImage && (
-                    <div className="relative aspect-[21/9] rounded-xl overflow-hidden border border-gray-100 mt-4">
+                  <div className="flex items-start gap-2 px-1">
+                    <AlertCircle className="w-3.5 h-3.5 text-emerald-600 mt-0.5" />
+                    <p className="text-[10px] text-emerald-800 font-medium leading-relaxed">
+                      Reference files in your <code className="bg-emerald-100/50 px-1 rounded">public</code> folder using paths starting with <code className="bg-emerald-100/50 px-1 rounded">/</code>
+                    </p>
+                  </div>
+                  {selectedImage && uploadMethod === 'manual' && (
+                    <div className="relative aspect-[21/9] rounded-xl overflow-hidden border-2 border-emerald-200 mt-2 shadow-sm">
                       <img src={selectedImage} alt="Manual preview" className="w-full h-full object-cover" />
+                      <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">
+                        Current View
+                      </div>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <form onSubmit={handleSubmit(onSlideSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-900">Main Headline</label>
-                  <Input {...register('title')} placeholder="Enter a powerful headline..." className="bg-gray-50" />
-                  {errors.title && <p className="text-red-500 text-xs">{errors.title.message}</p>}
+            <form onSubmit={handleSubmit(onSlideSubmit)} className="space-y-5">
+              <div className="grid gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-400 uppercase tracking-[2px]">Main Headline</label>
+                  <Input {...register('title')} placeholder="Enter a powerful headline..." className="bg-gray-50 border-gray-100 h-11 focus:bg-white" />
+                  {errors.title && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.title.message}</p>}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-900">Description Text</label>
-                  <Textarea {...register('subtitle')} rows={3} placeholder="Tell your visitors what you offer..." className="bg-gray-50 resize-none" />
-                  {errors.subtitle && <p className="text-red-500 text-xs">{errors.subtitle.message}</p>}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-400 uppercase tracking-[2px]">Description Text</label>
+                  <Textarea {...register('subtitle')} rows={3} placeholder="Tell your visitors what you offer..." className="bg-gray-50 border-gray-100 focus:bg-white resize-none" />
+                  {errors.subtitle && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.subtitle.message}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-900">Button Text</label>
-                    <Input {...register('ctaText')} placeholder="e.g., Get Started" className="bg-gray-50" />
-                    {errors.ctaText && <p className="text-red-500 text-xs">{errors.ctaText.message}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-[2px]">Button Text</label>
+                    <Input {...register('ctaText')} placeholder="e.g., Get Started" className="bg-gray-50 border-gray-100 h-11" />
+                    {errors.ctaText && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.ctaText.message}</p>}
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-900">Button Link</label>
-                    <Input {...register('ctaLink')} placeholder="e.g., /contact" className="bg-gray-50" />
-                    {errors.ctaLink && <p className="text-red-500 text-xs">{errors.ctaLink.message}</p>}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-[2px]">Button Link</label>
+                    <Input {...register('ctaLink')} placeholder="e.g., /contact or tel:+1234567" className="bg-gray-50 border-gray-100 h-11" />
+                    <p className="text-[9px] text-gray-400 mt-1">
+                      Use <code className="bg-gray-100 px-1 rounded">/contact</code> for pages, 
+                      <code className="bg-gray-100 px-1 rounded">tel:+123</code> for phones, or 
+                      <code className="bg-gray-100 px-1 rounded">mailto:a@b.com</code> for email.
+                    </p>
+                    {errors.ctaLink && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.ctaLink.message}</p>}
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-6 border-t border-gray-100">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">
+              <div className="flex gap-3 pt-6 border-t border-gray-100 mt-4 shrink-0">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-12 font-bold">
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold">
-                  {editingIndex !== null ? 'Update Slide' : 'Add Slide'}
+                <Button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black h-12 shadow-lg shadow-blue-100">
+                  {editingIndex !== null ? 'Save Changes' : 'Add to Carousel'}
                 </Button>
               </div>
             </form>

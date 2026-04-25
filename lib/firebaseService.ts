@@ -113,6 +113,7 @@ const DEMO_ADMIN_SETTINGS: AdminSettings = {
   },
   footerContent: {
     companyName: "Green Land Power Inc.",
+    description: "Liberia's leading electrical engineering firm providing professional solutions for residential and industrial sectors.",
     address: "Monrovia, Liberia",
     phone: "+231 77 000 0000",
     email: "info@greenlandpower.com",
@@ -120,10 +121,21 @@ const DEMO_ADMIN_SETTINGS: AdminSettings = {
       facebook: "#",
       twitter: "#",
       linkedin: "#",
-      instagram: "#"
+      instagram: "#",
+      whatsapp: "https://wa.me/231770000000"
     },
-    copyright: "© 2024 Green Land Power Inc. All rights reserved."
-  }
+    copyrightText: "© 2024 Green Land Power Inc. All rights reserved."
+  },
+  contactInfo: {
+    address: "Monrovia, Liberia",
+    phone: "+231 77 000 0000",
+    whatsapp: "+231 77 000 0000",
+    email: "info@greenlandpower.com",
+    workingHours: "Mon - Fri: 8:00 AM - 6:00 PM, Sat: 9:00 AM - 2:00 PM",
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127111.45892543944!2d-10.8222629393046!3d6.29177114620023!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTcnMzAuNCJOIDEwwrA0NycxMi44Ilc!5e0!3m2!1sen!2slr!4v1714000000000!5m2!1sen!2slr"
+  },
+  companyEmail: "info@greenlandpower.com",
+  companyPhone: "+231 77 000 0000"
 };
 
 // Admin Settings
@@ -167,6 +179,28 @@ export const updateFooterContent = async (footerData: FooterContent) => {
     return { success: true };
   } catch (error) {
     console.error('Error updating footer:', error);
+    throw error;
+  }
+};
+
+export const updateContactInfo = async (contactData: ContactInfo) => {
+  try {
+    if (!db) {
+      console.warn('Firebase not initialized. Demo mode.');
+      return { success: true };
+    }
+    const adminRef = doc(db, 'admin', 'settings');
+    await setDoc(
+      adminRef,
+      {
+        contactInfo: contactData,
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating contact info:', error);
     throw error;
   }
 };

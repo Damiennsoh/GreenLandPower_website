@@ -30,8 +30,18 @@ export interface FooterContent {
     twitter?: string;
     linkedin?: string;
     instagram?: string;
+    whatsapp?: string;
   };
   copyrightText: string;
+}
+
+export interface ContactInfo {
+  address: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  workingHours: string;
+  mapEmbedUrl?: string;
 }
 
 export interface Service {
@@ -98,6 +108,7 @@ export interface AdminSettings {
   id?: string;
   heroSection: HeroSection;
   footerContent: FooterContent;
+  contactInfo: ContactInfo;
   companyEmail: string;
   companyPhone: string;
   updatedAt?: Date;

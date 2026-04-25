@@ -26,7 +26,7 @@ import {
 import { uploadPortfolioImageToBlob } from '@/lib/blobService';
 import { Portfolio } from '@/lib/types';
 import { toast } from 'sonner';
-import { Trash2, Globe, Eye, Cloud, Plus, Pencil, X, ArrowUp, ArrowDown, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Globe, Eye, Cloud, Plus, Pencil, X, ArrowUp, ArrowDown, Image as ImageIcon, Link as LinkIcon, CheckCircle, AlertCircle } from 'lucide-react';
 
 const portfolioSchema = z.object({
   title: z.string().min(3, 'Title is required'),
@@ -47,7 +47,8 @@ export default function AdminPortfolioEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob'>('blob');
+  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob' | 'manual'>('blob');
+  const [manualUrl, setManualUrl] = useState('');
 
   const {
     register,
@@ -81,7 +82,8 @@ export default function AdminPortfolioEditor() {
         url = await uploadImage(file, `portfolio/${Date.now()}`);
       }
       setSelectedImage(url);
-      toast.success(`Image uploaded successfully`);
+      setManualUrl(url);
+      toast.success('Image successfully uploaded and attached!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to upload image');
     } finally {
@@ -89,9 +91,18 @@ export default function AdminPortfolioEditor() {
     }
   };
 
+  const handleManualUrlSubmit = () => {
+    if (manualUrl.trim()) {
+      setSelectedImage(manualUrl.trim());
+      toast.success('Image path attached successfully');
+    } else {
+      toast.error('Please enter a valid URL or path');
+    }
+  };
+
   const onSubmit = async (data: PortfolioFormData) => {
     if (!selectedImage && !editingId) {
-      toast.error('Please upload an image');
+      toast.error('Please attach a project image before saving');
       return;
     }
 
@@ -105,15 +116,16 @@ export default function AdminPortfolioEditor() {
 
       if (editingId) {
         await updatePortfolio(editingId, portfolioData);
-        toast.success('Portfolio item updated successfully!');
+        toast.success('Project updated live!');
       } else {
         await addPortfolio(portfolioData);
-        toast.success('Portfolio item added successfully!');
+        toast.success('New project published live!');
       }
 
       setIsModalOpen(false);
       reset();
       setSelectedImage(null);
+      setManualUrl('');
       setEditingId(null);
     } catch (error) {
       toast.error('Failed to save portfolio item');
@@ -125,6 +137,7 @@ export default function AdminPortfolioEditor() {
   const handleAdd = () => {
     setEditingId(null);
     setSelectedImage(null);
+    setManualUrl('');
     reset({
       title: '',
       description: '',
@@ -138,7 +151,8 @@ export default function AdminPortfolioEditor() {
 
   const handleEdit = (portfolio: Portfolio) => {
     setEditingId(portfolio.id!);
-    setSelectedImage(portfolio.image);
+    setSelectedImage(portfolio.image || null);
+    setManualUrl(portfolio.image || '');
     reset({
       title: portfolio.title,
       description: portfolio.description,
@@ -154,7 +168,7 @@ export default function AdminPortfolioEditor() {
     if (confirm('Are you sure you want to delete this portfolio item?')) {
       try {
         await deletePortfolio(id);
-        toast.success('Portfolio item deleted successfully!');
+        toast.success('Project removed from portfolio');
       } catch (error) {
         toast.error('Failed to delete portfolio item');
       }
@@ -166,13 +180,12 @@ export default function AdminPortfolioEditor() {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     
     if (targetIndex >= 0 && targetIndex < portfolios.length) {
-      // Swap items locally first for immediate feedback
       [newPortfolios[index], newPortfolios[targetIndex]] = [newPortfolios[targetIndex], newPortfolios[index]];
       setPortfolios(newPortfolios);
       
       try {
         await updatePortfolioOrder(newPortfolios);
-        toast.success('Order updated');
+        toast.success('Order updated live');
       } catch (error) {
         toast.error('Failed to update order');
       }
@@ -180,7 +193,7 @@ export default function AdminPortfolioEditor() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading portfolios...</div>;
+    return <div className="text-center py-20 text-gray-500">Loading portfolio data...</div>;
   }
 
   return (
@@ -190,7 +203,7 @@ export default function AdminPortfolioEditor() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Portfolio Management</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Reorder projects to choose which top 3 appear on the homepage
+            Reorder projects to feature the top 3 on your homepage.
           </p>
         </div>
         <div className="flex gap-3">
@@ -201,30 +214,26 @@ export default function AdminPortfolioEditor() {
             <Plus className="w-4 h-4" />
             Add New Project
           </Button>
-          <a
-            href="/portfolio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+          <Button
+            variant="outline"
+            asChild
+            className="border-gray-200"
           >
-            <Eye className="w-4 h-4" />
-            View Live
-          </a>
+            <a href="/portfolio" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+              <Eye className="w-4 h-4" />
+              View Live Site
+            </a>
+          </Button>
         </div>
       </div>
 
-      {/* Portfolio Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {portfolios.length === 0 ? (
           <div className="col-span-full bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Plus className="w-6 h-6 text-gray-400" />
-            </div>
             <h3 className="text-lg font-medium text-gray-900">No projects yet</h3>
-            <p className="text-gray-500 mt-1 mb-6">Start by adding your first portfolio item</p>
-            <Button onClick={handleAdd} variant="outline" className="border-green-600 text-green-600">
-              Add First Project
-            </Button>
+            <p className="text-gray-500 mt-1 mb-6">Your portfolio is currently empty.</p>
+            <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">Add First Project</Button>
           </div>
         ) : (
           portfolios.map((portfolio, index) => (
@@ -236,81 +245,31 @@ export default function AdminPortfolioEditor() {
             >
               <div className="relative h-48 overflow-hidden">
                 {portfolio.image ? (
-                  <img
-                    src={portfolio.image}
-                    alt={portfolio.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <img src={portfolio.image} alt={portfolio.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                     <ImageIcon className="w-8 h-8 text-gray-300" />
                   </div>
                 )}
                 
-                {/* Ranking Badge */}
                 <div className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md z-10 ${
                   index < 3 ? 'bg-green-600 text-white' : 'bg-white text-gray-500'
                 }`}>
                   {index + 1}
                 </div>
 
-                {/* Homepage indicator */}
-                {index < 3 && (
-                  <div className="absolute top-3 right-12 bg-green-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase tracking-tight shadow-md">
-                    Featured on Home
-                  </div>
-                )}
-
                 <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => movePortfolio(index, 'up')}
-                    disabled={index === 0}
-                    className="p-1.5 bg-white/90 backdrop-blur shadow-sm rounded text-gray-600 hover:text-green-600 disabled:opacity-30"
-                    title="Move Up"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => movePortfolio(index, 'down')}
-                    disabled={index === portfolios.length - 1}
-                    className="p-1.5 bg-white/90 backdrop-blur shadow-sm rounded text-gray-600 hover:text-green-600 disabled:opacity-30"
-                    title="Move Down"
-                  >
-                    <ArrowDown className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(portfolio.id!)}
-                    className="p-1.5 bg-red-600 text-white shadow-sm rounded hover:bg-red-700"
-                    title="Delete Permanently"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                <div className="absolute bottom-2 left-2">
-                  <span className="bg-green-600/90 backdrop-blur text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">
-                    {portfolio.category}
-                  </span>
+                  <button onClick={() => movePortfolio(index, 'up')} disabled={index === 0} className="p-1.5 bg-white shadow-sm rounded text-gray-600 hover:text-green-600 disabled:opacity-30"><ArrowUp className="w-4 h-4" /></button>
+                  <button onClick={() => movePortfolio(index, 'down')} disabled={index === portfolios.length - 1} className="p-1.5 bg-white shadow-sm rounded text-gray-600 hover:text-green-600 disabled:opacity-30"><ArrowDown className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(portfolio.id!)} className="p-1.5 bg-red-600 text-white shadow-sm rounded hover:bg-red-700"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
               <div className="p-5 flex-1 flex flex-col">
                 <h3 className="font-bold text-gray-900 line-clamp-1">{portfolio.title}</h3>
-                <p className="text-gray-500 text-sm mt-2 line-clamp-2 min-h-[2.5rem]">
-                  {portfolio.description}
-                </p>
-                <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <div className="text-[11px] text-gray-400">
-                    {portfolio.completionDate || 'Recent Project'}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(portfolio)}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 px-2"
-                  >
-                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                    Edit Details
-                  </Button>
+                <p className="text-gray-500 text-xs mt-2 line-clamp-2">{portfolio.description}</p>
+                <div className="mt-auto pt-4 flex items-center justify-between">
+                  <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold uppercase tracking-wider">{portfolio.category}</span>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(portfolio)} className="text-green-600 hover:bg-green-50 h-8 font-bold">Edit</Button>
                 </div>
               </div>
             </div>
@@ -318,156 +277,81 @@ export default function AdminPortfolioEditor() {
         )}
       </div>
 
-      {/* Edit/Add Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              {editingId ? 'Edit Project Details' : 'Add New Portfolio Project'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingId 
-                ? 'Update the project information, images, and results.' 
-                : 'Enter the details for your new portfolio project to be displayed on the website.'}
-            </DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle>{editingId ? 'Edit Project' : 'Add New Project'}</DialogTitle>
+            <DialogDescription>Fill in the project details and attach an image.</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
-            {/* Image Upload Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-gray-900">Project Showcase Image</label>
-              
-              <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('blob')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    uploadMethod === 'blob' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
-                  }`}
-                >
-                  Vercel Blob
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('firebase')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    uploadMethod === 'firebase' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-500'
-                  }`}
-                >
-                  Firebase
-                </button>
-              </div>
-
-              <div className="relative group aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center transition-colors hover:border-green-300">
+          <div className="flex-1 px-6 py-4 space-y-6 overflow-y-auto">
+            {/* Image Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Project Image</label>
                 {selectedImage ? (
-                  <>
-                    <img
-                      src={selectedImage}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <label className="cursor-pointer bg-white text-gray-900 px-4 py-2 rounded-lg font-bold text-sm shadow-xl">
-                        Change Image
-                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                      </label>
-                    </div>
-                  </>
+                  <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase bg-green-50 px-2 py-0.5 rounded">
+                    <CheckCircle className="w-3 h-3" /> Attached
+                  </div>
                 ) : (
-                  <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full p-6">
-                    <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      {uploadMethod === 'blob' ? <Cloud className="text-blue-500" /> : <Globe className="text-orange-500" />}
-                    </div>
-                    <span className="text-sm font-bold text-gray-900">Click to upload image</span>
-                    <span className="text-xs text-gray-500 mt-1">Recommended: 1200 x 800px</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </label>
-                )}
-                
-                {isUploadingImage && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <span className="text-sm font-bold text-green-700">Uploading to {uploadMethod}...</span>
+                  <div className="flex items-center gap-1 text-red-500 text-[10px] font-bold uppercase bg-red-50 px-2 py-0.5 rounded">
+                    <X className="w-3 h-3" /> Required
                   </div>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-bold text-gray-900">Project Title</label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Monrovia Mall Electrical"
-                  {...register('title')}
-                  className="bg-gray-50 focus:bg-white"
-                />
-                {errors.title && <p className="text-red-500 text-xs">{errors.title.message}</p>}
+              <div className="flex gap-2 p-1 bg-gray-50 rounded-xl w-fit border">
+                <button type="button" onClick={() => setUploadMethod('blob')} className={`px-4 py-2 text-xs font-bold rounded-lg ${uploadMethod === 'blob' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}><Cloud className="w-3.5 h-3.5 inline mr-2"/>Blob</button>
+                <button type="button" onClick={() => setUploadMethod('firebase')} className={`px-4 py-2 text-xs font-bold rounded-lg ${uploadMethod === 'firebase' ? 'bg-white shadow text-orange-600' : 'text-gray-500'}`}><Globe className="w-3.5 h-3.5 inline mr-2"/>Firebase</button>
+                <button type="button" onClick={() => setUploadMethod('manual')} className={`px-4 py-2 text-xs font-bold rounded-lg ${uploadMethod === 'manual' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}><LinkIcon className="w-3.5 h-3.5 inline mr-2"/>Manual</button>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="category" className="text-sm font-bold text-gray-900">Project Category</label>
-                <Input
-                  id="category"
-                  placeholder="e.g., Commercial, Solar, Industrial"
-                  {...register('category')}
-                  className="bg-gray-50 focus:bg-white"
-                />
-                {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
+              {uploadMethod !== 'manual' ? (
+                <div className="relative aspect-video rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center bg-gray-50 hover:border-green-400 transition-colors">
+                  {selectedImage ? (
+                    <>
+                      <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center gap-2">
+                        <label className="cursor-pointer bg-white px-4 py-2 rounded-lg font-bold text-sm">Change<input type="file" onChange={handleImageUpload} className="hidden" /></label>
+                        <button onClick={() => setSelectedImage(null)} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Remove</button>
+                      </div>
+                    </>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center p-6 w-full">
+                      <ImageIcon className="w-10 h-10 text-gray-300 mb-2" />
+                      <span className="text-sm font-bold">Select Project Image</span>
+                      <input type="file" onChange={handleImageUpload} className="hidden" />
+                    </label>
+                  )}
+                  {isUploadingImage && <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center"><div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-2" />Uploading...</div>}
+                </div>
+              ) : (
+                <div className="space-y-2 bg-emerald-50/30 p-4 rounded-xl border border-emerald-100">
+                  <div className="flex gap-2">
+                    <Input value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} placeholder="e.g. /images/portfolio/project.jpg" />
+                    <Button type="button" onClick={handleManualUrlSubmit} className="bg-emerald-600 hover:bg-emerald-700">Attach</Button>
+                  </div>
+                  {selectedImage && uploadMethod === 'manual' && <img src={selectedImage} className="mt-2 rounded-lg aspect-video object-cover border" />}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Project Title</label><Input {...register('title')} /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Category</label><Input {...register('category')} /></div>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-bold text-gray-900">Detailed Description</label>
-              <Textarea
-                id="description"
-                rows={4}
-                placeholder="Describe the scope of work, challenges faced, and how Green Land Power solved them..."
-                {...register('description')}
-                className="bg-gray-50 focus:bg-white resize-none"
-              />
-              {errors.description && <p className="text-red-500 text-xs">{errors.description.message}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label htmlFor="client" className="text-sm font-bold text-gray-900">Client Name</label>
-                <Input id="client" {...register('client')} className="bg-gray-50" />
+              <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Description</label><Textarea {...register('description')} rows={3} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Client</label><Input {...register('client')} /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Completion</label><Input {...register('completionDate')} /></div>
               </div>
-              <div className="space-y-2">
-                <label htmlFor="completionDate" className="text-sm font-bold text-gray-900">Completion Date</label>
-                <Input id="completionDate" placeholder="e.g., August 2024" {...register('completionDate')} className="bg-gray-50" />
+              <div className="flex gap-3 pt-6 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 font-bold">Cancel</Button>
+                <Button type="submit" disabled={isSaving} className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-black">{isSaving ? 'Saving...' : 'Save & Publish Live'}</Button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="result" className="text-sm font-bold text-gray-900">Project Results & Outcomes</label>
-              <Input
-                id="result"
-                placeholder="e.g., 25% energy savings, Zero safety incidents"
-                {...register('result')}
-                className="bg-gray-50 focus:bg-white"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSaving}
-                className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg shadow-green-200"
-              >
-                {isSaving ? 'Saving Project...' : editingId ? 'Update Project' : 'Publish Project'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

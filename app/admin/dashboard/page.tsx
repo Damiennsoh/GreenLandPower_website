@@ -9,6 +9,7 @@ import AdminFooterEditor from '@/components/admin/admin-footer-editor';
 import AdminServicesEditor from '@/components/admin/admin-services-editor';
 import AdminPortfolioEditor from '@/components/admin/admin-portfolio-editor';
 import AdminTeamEditor from '@/components/admin/admin-team-editor';
+import AdminContactEditor from '@/components/admin/admin-contact-editor';
 import AdminSubmissionsViewer from '@/components/admin/admin-submissions-viewer';
 import { ConfirmSeedOverwriteDialog } from '@/components/admin/confirm-seed-overwrite-dialog';
 import {
@@ -25,7 +26,7 @@ import { seedAllData } from '@/lib/seedData';
 import { toast } from 'sonner';
 import AdminUsersEditor from '@/components/admin/admin-users-editor';
 
-type Tab = 'overview' | 'hero' | 'footer' | 'services' | 'portfolio' | 'team' | 'users' | 'submissions';
+type Tab = 'overview' | 'hero' | 'footer' | 'contact' | 'services' | 'portfolio' | 'team' | 'users' | 'submissions';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -337,6 +338,18 @@ const handleSeedData = () => {
                         Update service offerings
                       </p>
                     </button>
+
+                    <button
+                      onClick={() => setActiveTab('contact')}
+                      className="group p-4 sm:p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors text-left"
+                    >
+                      <h4 className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-emerald-700 mb-2">
+                        Edit Contact Info
+                      </h4>
+                      <p className="text-xs sm:text-sm text-gray-600 group-hover:text-emerald-600">
+                        Update phone, address & WhatsApp
+                      </p>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -344,6 +357,7 @@ const handleSeedData = () => {
 
             {activeTab === 'hero' && <AdminHeroEditor />}
             {activeTab === 'footer' && <AdminFooterEditor />}
+            {activeTab === 'contact' && <AdminContactEditor />}
             {activeTab === 'services' && <AdminServicesEditor />}
             {activeTab === 'portfolio' && <AdminPortfolioEditor />}
             {activeTab === 'team' && <AdminTeamEditor />}

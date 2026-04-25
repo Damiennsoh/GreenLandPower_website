@@ -392,7 +392,7 @@ export default function Home() {
             <div className="relative">
               <div className="aspect-square rounded-3xl bg-gray-100 overflow-hidden shadow-2xl relative">
                 <img 
-                  src="/images/about/team-work.jpg" 
+                  src="https://images.unsplash.com/photo-1621905235292-05749155eddb?w=800&q=80" 
                   alt="Team working" 
                   className="w-full h-full object-cover"
                   onError={(e) => {

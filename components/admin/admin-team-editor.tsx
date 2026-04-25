@@ -25,7 +25,7 @@ import {
 import { uploadPortfolioImageToBlob } from '@/lib/blobService';
 import { TeamMember } from '@/lib/types';
 import { toast } from 'sonner';
-import { Trash2, Plus, Globe, Pencil, User, Mail, Cloud, Camera } from 'lucide-react';
+import { Trash2, Plus, Globe, Pencil, User, Mail, Cloud, Camera, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
 
 const teamSchema = z.object({
   name: z.string().min(3, 'Name is required'),
@@ -44,7 +44,8 @@ export default function AdminTeamEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob'>('blob');
+  const [uploadMethod, setUploadMethod] = useState<'firebase' | 'blob' | 'manual'>('blob');
+  const [manualUrl, setManualUrl] = useState('');
 
   const {
     register,
@@ -78,7 +79,8 @@ export default function AdminTeamEditor() {
         url = await uploadImage(file, `team/${Date.now()}`);
       }
       setSelectedImage(url);
-      toast.success('Profile picture uploaded!');
+      setManualUrl(url);
+      toast.success('Profile picture attached!');
     } catch (error: any) {
       toast.error('Failed to upload image');
     } finally {
@@ -86,9 +88,18 @@ export default function AdminTeamEditor() {
     }
   };
 
+  const handleManualUrlSubmit = () => {
+    if (manualUrl.trim()) {
+      setSelectedImage(manualUrl.trim());
+      toast.success('Image path attached successfully');
+    } else {
+      toast.error('Please enter a valid URL or path');
+    }
+  };
+
   const onSubmit = async (data: TeamFormData) => {
     if (!selectedImage && !editingId) {
-      toast.error('Please upload a profile picture');
+      toast.error('Please attach a profile picture before saving');
       return;
     }
 
@@ -102,15 +113,16 @@ export default function AdminTeamEditor() {
 
       if (editingId) {
         await updateTeamMember(editingId, memberData);
-        toast.success('Team member updated!');
+        toast.success('Team member updated live!');
       } else {
         await addTeamMember(memberData);
-        toast.success('Team member added!');
+        toast.success('New team member published live!');
       }
 
       setIsModalOpen(false);
       reset();
       setSelectedImage(null);
+      setManualUrl('');
       setEditingId(null);
     } catch (error) {
       toast.error('Failed to save team member');
@@ -122,6 +134,7 @@ export default function AdminTeamEditor() {
   const handleAdd = () => {
     setEditingId(null);
     setSelectedImage(null);
+    setManualUrl('');
     reset({
       name: '',
       position: '',
@@ -133,7 +146,8 @@ export default function AdminTeamEditor() {
 
   const handleEdit = (member: TeamMember) => {
     setEditingId(member.id!);
-    setSelectedImage(member.image);
+    setSelectedImage(member.image || null);
+    setManualUrl(member.image || '');
     reset({
       name: member.name,
       position: member.position,
@@ -147,7 +161,7 @@ export default function AdminTeamEditor() {
     if (confirm('Are you sure you want to delete this team member?')) {
       try {
         await deleteTeamMember(id);
-        toast.success('Team member removed');
+        toast.success('Team member removed from directory');
       } catch (error) {
         toast.error('Failed to delete team member');
       }
@@ -155,188 +169,107 @@ export default function AdminTeamEditor() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading team...</div>;
+    return <div className="text-center py-20 text-gray-500">Loading team directory...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Team Management</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Introduce the professionals behind Green Land Power
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Manage the profiles of your staff members.</p>
         </div>
-        <Button
-          onClick={handleAdd}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Team Member
+        <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700 text-white font-bold flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Add Team Member
         </Button>
       </div>
 
-      {/* Team Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {team.length === 0 ? (
-          <div className="col-span-full bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <h3 className="text-lg font-medium text-gray-900">No team members yet</h3>
-            <p className="text-gray-500 mt-1 mb-6">Start building your company profile</p>
-            <Button onClick={handleAdd} variant="outline" className="border-green-600 text-green-600">
-              Add First Member
-            </Button>
-          </div>
-        ) : (
-          team.map((member) => (
-            <div
-              key={member.id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="relative h-40 bg-gradient-to-br from-green-500 to-green-700 p-6 flex justify-center">
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleEdit(member)}
-                    className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur rounded-md text-white transition-colors"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(member.id!)}
-                    className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur rounded-md text-white transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-gray-100 mt-8 shadow-lg">
-                  {member.image ? (
-                    <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-12 h-12 text-gray-300" />
-                    </div>
-                  )}
-                </div>
+        {team.map((member) => (
+          <div key={member.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group">
+            <div className="relative h-40 bg-gradient-to-br from-green-500 to-green-700 p-6 flex justify-center">
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleEdit(member)} className="p-1.5 bg-white shadow-sm rounded text-gray-600 hover:text-green-600"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(member.id!)} className="p-1.5 bg-red-600 text-white shadow-sm rounded hover:bg-red-700"><Trash2 className="w-4 h-4" /></button>
               </div>
-              <div className="p-6 pt-12 text-center">
-                <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
-                <p className="text-green-600 text-xs font-bold uppercase tracking-wider mb-3">
-                  {member.position}
-                </p>
-                <div className="flex items-center justify-center gap-2 text-gray-400 text-xs mb-4">
-                  <Mail className="w-3 h-3" />
-                  {member.email}
-                </div>
-                <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem]">
-                  {member.bio}
-                </p>
-                <Button
-                  onClick={() => handleEdit(member)}
-                  variant="ghost"
-                  className="w-full mt-4 text-green-600 hover:text-green-700 hover:bg-green-50 font-bold"
-                >
-                  Edit Profile
-                </Button>
+              <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-gray-100 mt-8 shadow-lg">
+                <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
               </div>
             </div>
-          ))
-        )}
+            <div className="p-6 pt-12 text-center">
+              <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
+              <p className="text-green-600 text-xs font-bold uppercase tracking-wider mb-3">{member.position}</p>
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(member)} className="w-full mt-4 text-green-600 font-bold border border-green-50">Edit Profile</Button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Edit/Add Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {editingId ? 'Edit Team Member' : 'Add Team Member'}
-            </DialogTitle>
-            <DialogDescription>
-              Enter the professional details and upload a profile picture.
-            </DialogDescription>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle>{editingId ? 'Edit Team Member' : 'Add Team Member'}</DialogTitle>
+            <DialogDescription>Profile picture and professional details.</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
-            {/* Profile Picture Upload */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative group w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+          <div className="flex-1 px-6 py-4 space-y-6 overflow-y-auto">
+            {/* Image Source Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Profile Photo</label>
                 {selectedImage ? (
-                  <>
-                    <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
-                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                      <Camera className="w-6 h-6 text-white" />
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                    </label>
-                  </>
+                  <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase bg-green-50 px-2 py-0.5 rounded">
+                    <CheckCircle className="w-3 h-3" /> Attached
+                  </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
-                    <User className="w-8 h-8 text-gray-300 mb-1" />
-                    <span className="text-[10px] text-gray-500 font-bold uppercase">Upload Photo</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </label>
-                )}
-                {isUploadingImage && (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="flex items-center gap-1 text-red-500 text-[10px] font-bold uppercase bg-red-50 px-2 py-0.5 rounded">
+                    <X className="w-3 h-3" /> Required
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 p-1 bg-gray-100 rounded-md">
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('blob')}
-                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
-                    uploadMethod === 'blob' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'
-                  }`}
-                >
-                  BLOB
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('firebase')}
-                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
-                    uploadMethod === 'firebase' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500'
-                  }`}
-                >
-                  FIREBASE
-                </button>
+
+              <div className="flex gap-2 p-1 bg-gray-50 rounded-xl w-fit border">
+                <button type="button" onClick={() => setUploadMethod('blob')} className={`px-3 py-1.5 text-xs font-bold rounded-lg ${uploadMethod === 'blob' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>Blob</button>
+                <button type="button" onClick={() => setUploadMethod('firebase')} className={`px-3 py-1.5 text-xs font-bold rounded-lg ${uploadMethod === 'firebase' ? 'bg-white shadow text-orange-600' : 'text-gray-500'}`}>Firebase</button>
+                <button type="button" onClick={() => setUploadMethod('manual')} className={`px-3 py-1.5 text-xs font-bold rounded-lg ${uploadMethod === 'manual' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}>Manual</button>
               </div>
+
+              {uploadMethod !== 'manual' ? (
+                <div className="relative w-32 h-32 mx-auto rounded-full border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center bg-gray-50 hover:border-green-400 transition-colors">
+                  {selectedImage ? (
+                    <>
+                      <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center">
+                        <label className="cursor-pointer bg-white p-2 rounded-full"><Camera className="w-5 h-5"/><input type="file" onChange={handleImageUpload} className="hidden" /></label>
+                      </div>
+                    </>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center w-full"><User className="w-8 h-8 text-gray-300"/><input type="file" onChange={handleImageUpload} className="hidden" /></label>
+                  )}
+                  {isUploadingImage && <div className="absolute inset-0 bg-white/90 flex items-center justify-center"><div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /></div>}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} placeholder="/images/team/member.jpg" />
+                    <Button type="button" onClick={handleManualUrlSubmit} className="bg-emerald-600">Attach</Button>
+                  </div>
+                  {selectedImage && uploadMethod === 'manual' && <img src={selectedImage} className="mx-auto w-24 h-24 rounded-full object-cover border" />}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase">Full Name</label>
-                <Input {...register('name')} placeholder="e.g., James Wilson" className="bg-gray-50" />
-                {errors.name && <p className="text-red-500 text-[10px]">{errors.name.message}</p>}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Full Name</label><Input {...register('name')} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Position</label><Input {...register('position')} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Email</label><Input {...register('email')} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-gray-400">Bio</label><Textarea {...register('bio')} rows={3} /></div>
+              <div className="flex gap-2 pt-6 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
+                <Button type="submit" disabled={isSaving} className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-black">{isSaving ? 'Saving...' : 'Publish Live'}</Button>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase">Position</label>
-                <Input {...register('position')} placeholder="e.g., Chief Engineer" className="bg-gray-50" />
-                {errors.position && <p className="text-red-500 text-[10px]">{errors.position.message}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase">Email Address</label>
-                <Input {...register('email')} placeholder="email@greenlandpower.com" className="bg-gray-50" />
-                {errors.email && <p className="text-red-500 text-[10px]">{errors.email.message}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase">Professional Bio</label>
-                <Textarea {...register('bio')} rows={3} placeholder="Write a short professional summary..." className="bg-gray-50 resize-none" />
-                {errors.bio && <p className="text-red-500 text-[10px]">{errors.bio.message}</p>}
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving} className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-bold">
-                {isSaving ? 'Saving...' : editingId ? 'Update Member' : 'Add Member'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
